@@ -4,7 +4,7 @@
 
 def main():
     """
-    Hàm chính để chạy ứng dụng. aa
+    Hàm chính để chạy ứng dụng.
     """
     print("Dự án Python mới đã được thiết lập trong VS Code!")
     try:
