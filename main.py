@@ -320,6 +320,7 @@ class MacroStep:
 # =========================================================================
 
 class RecordingHUD(tk.Toplevel):
+    PAUSED_COLOR = "#FFD700" # Vàng
     """
     Một cửa sổ HUD nhỏ, luôn ở trên cùng, để hiển thị trạng thái ghi/phát
     và cung cấp nút Stop.
@@ -328,11 +329,18 @@ class RecordingHUD(tk.Toplevel):
         super().__init__(parent)
         self.stop_callback = stop_callback
 
+        self.pause_event = threading.Event()
+        self.is_paused = False
+
+        # Biến để di chuyển cửa sổ
+        self._offset_x = 0
+        self._offset_y = 0
+
         # Thiết lập cửa sổ HUD
         self.overrideredirect(True)  # Bỏ viền và thanh tiêu đề
         self.attributes('-topmost', True)  # Luôn ở trên cùng
         self.attributes('-alpha', 0.9)  # Hơi trong suốt
-
+        self.withdraw() # Ẩn cửa sổ ban đầu để tránh nhấp nháy
         # Tạo style cho các widget trong HUD
         style = ttk.Style(self)
         style.configure("HUD.TFrame", background="#282c34")
@@ -341,6 +349,10 @@ class RecordingHUD(tk.Toplevel):
         style.map("HUD.TButton",
                   background=[('active', '#e06c75'), ('!active', '#d15660')],
                   foreground=[('active', 'white')])
+        style.configure("Pause.TButton", font=("Arial", 9, "bold"))
+        style.map("Pause.TButton",
+                  background=[('active', '#61afef'), ('!active', '#5699d6')],
+                  foreground=[('active', 'white')])
 
         # Frame chính của HUD
         main_frame = ttk.Frame(self, style="HUD.TFrame", padding=(10, 5))
@@ -348,11 +360,22 @@ class RecordingHUD(tk.Toplevel):
 
         # Label hiển thị trạng thái
         self.status_label = ttk.Label(main_frame, text="Chuẩn bị...", style="HUD.TLabel")
-        self.status_label.pack(side="left", padx=(0, 15))
+        self.status_label.pack(side="left", padx=(0, 10))
+
+        # Nút Pause/Resume
+        self.pause_button = ttk.Button(main_frame, text="❚❚ PAUSE", style="Pause.TButton", command=self.toggle_pause)
+        self.pause_button.pack(side="left", padx=(0, 10))
+        self.pause_button.pack_forget() # Ẩn nút pause ban đầu
 
         # Nút Stop
         stop_button = ttk.Button(main_frame, text="■ STOP", style="HUD.TButton", command=self.stop_callback)
         stop_button.pack(side="left")
+
+        # Gán sự kiện để di chuyển HUD
+        main_frame.bind("<Button-1>", self._on_mouse_press)
+        main_frame.bind("<B1-Motion>", self._on_mouse_drag)
+        self.status_label.bind("<Button-1>", self._on_mouse_press)
+        self.status_label.bind("<B1-Motion>", self._on_mouse_drag)
 
         # Căn giữa HUD ở cạnh trên màn hình
         self.update_idletasks()
@@ -360,9 +383,32 @@ class RecordingHUD(tk.Toplevel):
         window_width = self.winfo_width()
         x = (screen_width // 2) - (window_width // 2)
         self.geometry(f"+{x}+20") # 20px từ cạnh trên
+        self.deiconify() # Hiện cửa sổ ở đúng vị trí
+
+    def _on_mouse_press(self, event):
+        self._offset_x = event.x
+        self._offset_y = event.y
+
+    def _on_mouse_drag(self, event):
+        x = self.winfo_pointerx() - self._offset_x
+        y = self.winfo_pointery() - self._offset_y
+        self.geometry(f"+{x}+{y}")
+
+    def toggle_pause(self):
+        self.is_paused = not self.is_paused
+        if self.is_paused:
+            self.pause_event.clear() # Chặn thread
+            self.pause_button.config(text="▶ RESUME")
+            self.update_status("⏸ TẠM DỪNG", self.PAUSED_COLOR)
+        else:
+            self.pause_event.set() # Cho phép thread chạy tiếp
+            self.pause_button.config(text="❚❚ PAUSE")
+            # Trạng thái sẽ được cập nhật lại bởi vòng lặp chính
 
     def update_status(self, text, color="white"):
         """Cập nhật văn bản và màu sắc của label trạng thái."""
+        if self.is_paused: # Nếu đang pause thì không cập nhật status từ bên ngoài
+            return
         self.status_label.config(text=text, foreground=color)
 
     def close(self):
@@ -434,6 +480,7 @@ class MacroApp(ThemedTk):
         self.keyboard_listener = None
         self.current_modifiers = set()
 
+        self.pause_event = None
         self.hud_window = None
         self.realtime_status_frame = None
 
@@ -688,16 +735,11 @@ class MacroApp(ThemedTk):
 
     def _toggle_realtime_status(self):
         """Toggle the visibility of the real-time status frame."""
-        if self.show_realtime_status.get():
-            self.realtime_status_frame.grid()
-        else:
-            self.realtime_status_frame.grid_remove()
+        # Hàm này chỉ có mục đích là được gọi bởi Checkbutton,
+        # logic chính nằm trong _update_status_bar_info
+        pass
 
     def _update_status_bar_info(self):
-        """Cập nhật liên tục thông tin tọa độ chuột và cửa sổ mục tiêu."""
-        if not self.winfo_exists():
-            return
-
         if self.show_realtime_status.get():
             hwnd = hwnd_from_title(self.target_window_title)
 
@@ -913,35 +955,53 @@ class MacroApp(ThemedTk):
         self.cancel_flag.clear()
         threading.Thread(target=self._countdown_and_record, daemon=True).start()
 
+    def _on_escape_press(self, key):
+        if key == keyboard.Key.esc:
+            self.cancel_run()
+
     def _countdown_and_record(self):
         self.stop_listeners()
         self.current_modifiers.clear()
 
+        # SỬA: Khởi động listener cho ESC ngay từ đầu đếm ngược
+        countdown_escape_listener = keyboard.Listener(on_press=self._on_escape_press)
+        countdown_escape_listener.start()
+
         # SỬA: Sử dụng HUD thay cho cửa sổ đếm ngược
         self.hud_window = RecordingHUD(self, self.cancel_run)
 
-        for i in range(5, 0, -1):
-            if self.cancel_flag.is_set():
+        try:
+            for i in range(5, 0, -1):
+                if self.cancel_flag.is_set():
+                    if self.hud_window: self.hud_window.close()
+                    self.after(0, self.stop_recording)
+                    return
+                # Cập nhật HUD
+                self.after(0, self.hud_window.update_status, f"Bắt đầu ghi sau: {i}s", "#87CEEB")
+                self.update_idletasks()
+                
+                # SỬA: Thay thế time.sleep(1) bằng vòng lặp không chặn để ESC hoạt động ngay
+                delay_start_time = time.time()
+                while time.time() - delay_start_time < 1.0:
+                    if self.cancel_flag.is_set():
+                        break
+                    time.sleep(0.05)
+
+            if not self.cancel_flag.is_set():
+                # Focus cửa sổ mục tiêu
+                hwnd = hwnd_from_title(self.target_window_title)
+                if hwnd:
+                    bring_to_front(hwnd)
+
+                # Cập nhật HUD sang trạng thái đang ghi
+                self.after(0, self.hud_window.update_status, "🔴 ĐANG GHI... (Nhấn ESC để dừng)", "#FF4500")
+                self.update_idletasks()
+                self.after(100, self._start_listeners)
+            else:
                 if self.hud_window: self.hud_window.close()
-                self.after(0, self.stop_recording)
-                return
-            # Cập nhật HUD
-            self.after(0, self.hud_window.update_status, f"Bắt đầu ghi sau: {i}s", "#87CEEB")
-            self.update_idletasks()
-            time.sleep(1)
-
-        if not self.cancel_flag.is_set():
-            # Focus cửa sổ mục tiêu
-            hwnd = hwnd_from_title(self.target_window_title)
-            if hwnd:
-                bring_to_front(hwnd)
-
-            # Cập nhật HUD sang trạng thái đang ghi
-            self.after(0, self.hud_window.update_status, "🔴 ĐANG GHI... (Nhấn ESC để dừng)", "#FF4500")
-            self.update_idletasks()
-            self.after(100, self._start_listeners)
-        else:
-            if self.hud_window: self.hud_window.close()
+        finally:
+            # Đảm bảo listener tạm thời được dừng
+            countdown_escape_listener.stop()
 
     def _start_listeners(self):
         if not self.recording: return
@@ -949,11 +1009,12 @@ class MacroApp(ThemedTk):
         self.mouse_listener = mouse.Listener(on_click=self._on_mouse_click, on_move=lambda x, y: None)
         self.mouse_listener.start()
 
+        # SỬA: Listener chính cho các phím khác sẽ được khởi động ở đây.
         self.keyboard_listener = keyboard.Listener(on_press=self._on_key_press, on_release=self._on_key_release)
         self.keyboard_listener.start()
 
     def stop_recording(self):
-        # Hàm này được gọi khi END được nhấn hoặc khi cancel_run được gọi lúc đang ghi
+        # Hàm này được gọi khi ESC được nhấn hoặc khi cancel_run được gọi lúc đang ghi
         if not self.recording: return
 
         self.stop_listeners()
@@ -965,14 +1026,6 @@ class MacroApp(ThemedTk):
         # Chỉ hiển thị thông báo nếu không bị hủy bởi ESC (dấu hiệu của việc chạy)
         if not self.cancel_flag.is_set():
             messagebox.showinfo("Hoàn thành", f"Đã ghi xong macro với {len(self.macro_steps)} bước.")
-
-    # -------------------------- Running Macro (Halt on ESC) --------------------------
-
-    def _on_escape_press(self, key):
-        """Dừng macro ngay lập tức khi nhấn phím Escape."""
-        if key == keyboard.Key.esc:
-            self.cancel_run()
-            return False
 
     def on_test(self):
         self._run_macro(test_mode=True)
@@ -1023,36 +1076,52 @@ class MacroApp(ThemedTk):
 
     def _countdown_and_run_worker(self, test_mode):
         # SỬA: Sử dụng HUD thay cho cửa sổ đếm ngược
+        # Gán pause_event từ HUD cho luồng chạy macro
+        self.pause_event = threading.Event()
+        self.pause_event.set() # Mặc định là không pause
+
+        # SỬA: Khởi động listener cho ESC ngay từ đầu đếm ngược
+        countdown_escape_listener = keyboard.Listener(on_press=self._on_escape_press)
+        countdown_escape_listener.start()
+
         self.hud_window = RecordingHUD(self, self.cancel_run)
 
-        for i in range(5, 0, -1):
-            if self.cancel_flag.is_set():
-                if self.hud_window: self.hud_window.close()
-                self.after(0, self._reset_buttons)
-                return
-            # Cập nhật HUD
-            self.after(0, self.hud_window.update_status, f"Bắt đầu chạy sau: {i}s", "#87CEEB")
-            self.update_idletasks()
-            time.sleep(1)
+        try:
+            for i in range(5, 0, -1):
+                if self.cancel_flag.is_set():
+                    if self.hud_window: self.hud_window.close()
+                    self.after(0, self._reset_buttons)
+                    return
+                # Cập nhật HUD
+                self.after(0, self.hud_window.update_status, f"Bắt đầu chạy sau: {i}s", "#87CEEB")
+                self.update_idletasks()
 
-        if not self.cancel_flag.is_set():
-            # Cập nhật HUD sang trạng thái đang chạy
-            self.after(0, self.hud_window.update_status, "▶️ ĐANG CHẠY...", "#98FB98")
-            self._macro_run_worker(test_mode)
-        else:
-            if self.hud_window: self.hud_window.close()
-            self.after(0, self._reset_buttons)
-            self.cancel_flag.clear()
+                # SỬA: Thay thế time.sleep(1) bằng vòng lặp không chặn để ESC hoạt động ngay
+                delay_start_time = time.time()
+                while time.time() - delay_start_time < 1.0:
+                    if self.cancel_flag.is_set():
+                        break
+                    time.sleep(0.05)
+
+            if not self.cancel_flag.is_set():
+                # Cập nhật HUD sang trạng thái đang chạy
+                self.hud_window.pause_event = self.pause_event # Liên kết event
+                # SỬA LỖI: Sử dụng lambda để gọi pack() với các đối số từ khóa một cách chính xác
+                self.after(0, lambda: self.hud_window.pause_button.pack(side="left", padx=(0, 10)))
+
+                self.after(0, self.hud_window.update_status, "▶️ ĐANG CHẠY, ẤN ESC ĐỂ DỪNG...", "#98FB98")
+                self._macro_run_worker(test_mode)
+            else:
+                # Nếu bị hủy trong lúc đếm ngược, chỉ cần reset các nút
+                self.after(0, self._reset_buttons)
+        finally:
+            # SỬA: Đảm bảo listener chỉ được dừng sau khi _macro_run_worker đã chạy xong
+            countdown_escape_listener.stop()
 
     def _macro_run_worker(self, test_mode):
-
-        escape_listener = keyboard.Listener(on_press=self._on_escape_press)
-
         try:
             hwnd = hwnd_from_title(self.target_window_title)
             if not hwnd: return
-
-            escape_listener.start()
 
             use_recorded_speed = self.speed_mode.get() == 1
             custom_delay_s = self.spin_speed_val.get() / 1000.0
@@ -1063,6 +1132,10 @@ class MacroApp(ThemedTk):
             for row_index, row_data in rows_to_run.iterrows():
                 if self.cancel_flag.is_set():
                     break
+
+                # SỬA: Thêm logic kiểm tra Pause
+                if self.pause_event:
+                    self.pause_event.wait() # Thread sẽ dừng ở đây nếu event bị clear()
 
                 csv_item_id = f"csv_{row_index}"
                 self.after(0, self._highlight_csv_row, csv_item_id)
@@ -1081,10 +1154,13 @@ class MacroApp(ThemedTk):
 
                 self.after(0, self._unhighlight_csv_row, csv_item_id)
 
-                for _ in range(int(row_delay)):
+                # SỬA: Thay thế time.sleep() bằng vòng lặp không chặn để ESC hoạt động ngay lập tức
+                delay_start_time = time.time()
+                while time.time() - delay_start_time < row_delay:
                     if self.cancel_flag.is_set():
                         break
-                    time.sleep(1)
+                    # Chờ một khoảng ngắn và kiểm tra lại, thay vì ngủ một giấc dài
+                    time.sleep(0.05)
 
             if not self.cancel_flag.is_set():
                 self.after(0, self.lbl_status.config, {'text': "Hoàn thành!"})
@@ -1097,7 +1173,6 @@ class MacroApp(ThemedTk):
             self.after(0, self.lbl_status.config, {'text': f"LỖI: {str(e)}"})
             messagebox.showerror("Lỗi khi chạy", str(e))
         finally:
-            escape_listener.stop()
             self.after(0, self._reset_buttons)
             if self.hud_window: self.after(0, self.hud_window.close)
             self.after(0, self._clear_macro_highlights)
@@ -1107,6 +1182,10 @@ class MacroApp(ThemedTk):
         for step in self.macro_steps:
             if self.cancel_flag.is_set():
                 return
+
+            # SỬA: Thêm logic kiểm tra Pause
+            if self.pause_event:
+                self.pause_event.wait()
 
             self.after(0, self._highlight_macro_step, step)
 
@@ -1145,10 +1224,13 @@ class MacroApp(ThemedTk):
             delay = step.delay_after if use_recorded_speed else custom_delay_s
 
             if delay > 0:
-                start_time = time.time()
-                while time.time() - start_time < delay:
-                    if self.cancel_flag.is_set(): break
-                    time.sleep(min(delay, 0.1))
+                # SỬA: Thay thế time.sleep() bằng vòng lặp không chặn để ESC hoạt động ngay lập tức
+                delay_start_time = time.time()
+                while time.time() - delay_start_time < delay:
+                    if self.cancel_flag.is_set():
+                        break
+                    # Chờ một khoảng rất ngắn (50ms) và kiểm tra lại
+                    time.sleep(0.05)
 
     # -------------------------- UI Helpers (Đã Sửa - KHẮC PHỤC LỖI LAYOUT) --------------------------
 
@@ -1483,6 +1565,7 @@ class MacroApp(ThemedTk):
         if self.hud_window:
             self.hud_window.close()
             self.hud_window = None
+        self.pause_event = None
 
     def _highlight_macro_step(self, step):
         for item_id in self.tree_macro.get_children():
