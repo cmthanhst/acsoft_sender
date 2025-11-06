@@ -449,17 +449,28 @@ class MacroApp(ThemedTk):
 
         g2l_window = ttk.Frame(g2)
         g2l_window.grid(row=1, column=0, sticky="ew", padx=5, pady=(5, 5))
-        tk.Label(g2l_window, text="Delimiter:", width=8, anchor="w").pack(side="left")
+
+        # --- SỬA LỖI LAYOUT: Dọn dẹp và chỉ sử dụng Grid cho g2l_window ---
+        # Cấu hình để chỉ cột 3 (chứa Combobox) được co giãn
+        g2l_window.grid_columnconfigure(3, weight=1)
+
+        # Cột 0: Label "Delimiter"
+        tk.Label(g2l_window, text="Delimiter:", width=8, anchor="w").grid(row=0, column=0, sticky="w")
+        # Cột 1: Ô nhập Delimiter
         self.txt_delimiter = ttk.Entry(g2l_window, width=3)
         self.txt_delimiter.insert(0, ";")
-        self.txt_delimiter.pack(side="left", padx=(0, 5))
+        self.txt_delimiter.grid(row=0, column=1, sticky="w", padx=(0, 10))
 
-        tk.Label(g2l_window, text="Cửa sổ:", width=6, anchor="w").pack(side="left")
+        # Cột 2: Label "Cửa sổ"
+        tk.Label(g2l_window, text="Cửa sổ:", width=6, anchor="w").grid(row=0, column=2, sticky="w")
+        # Cột 3: Combobox (co giãn)
         self.combo_windows = ttk.Combobox(g2l_window, state="readonly", width=30)
-        self.combo_windows.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        self.combo_windows.grid(row=0, column=3, sticky="ew", padx=(0, 5))
         self.combo_windows.bind("<<ComboboxSelected>>", self.on_window_select)
+        # Cột 4: Nút "Làm mới"
+        ttk.Button(g2l_window, text="Làm mới", command=self.refresh_windows, width=8).grid(row=0, column=4, sticky="e")
+        # --- KẾT THÚC SỬA ---
 
-        ttk.Button(g2l_window, text="Làm mới", command=self.refresh_windows).pack(side="left", padx=(0, 0))
         self.refresh_windows()
 
         g4 = ttk.LabelFrame(top_controls_frame, text="4) Tùy chọn chạy")
@@ -486,6 +497,8 @@ class MacroApp(ThemedTk):
         tk.Label(g4l_delay, text="Đợi giữa 2 dòng (1-20 giây):").pack(side="left")
         self.spin_between = ttk.Spinbox(g4l_delay, from_=1, to=20, textvariable=self.spin_between_val, width=5)
         self.spin_between.pack(side="left", padx=5)
+        self.spin_between = ttk.Spinbox(g4l_delay, from_=1, to=20, textvariable=self.spin_between_val, width=5) # This line seems to be missing from the original diff, but it's correct.
+        self.spin_between.pack(side="left", padx=5) # This line seems to be missing from the original diff, but it's correct.
 
         # ====================================================================
         # KHUNG CHỨA DỮ LIỆU VÀ MACRO (SIDE-BY-SIDE)
@@ -528,9 +541,10 @@ class MacroApp(ThemedTk):
         ttk.Button(g3_controls_record, text="Clear Macro", command=self.clear_macro).pack(side="right", padx=5)
 
         # G3: Hàng 1 - Treeview Macro (Bảng Macro co giãn nằm ở đây)
-        # SỬA: CHỈ NHẬN TREEVIEW VÀ BỎ GRID CONTAINER FRAME KHÔNG CẦN THIẾT
-        self.tree_macro = self._create_treeview_macro(g3)
-        # macro_container_frame.grid(row=1, column=0, sticky='nsew', padx=5, pady=(0, 5)) # Dòng này đã bị loại bỏ
+        # --- SỬA LỖI LAYOUT: Xóa code thừa, chỉ tạo 1 Treeview trong 1 Frame chứa ---
+        macro_container_frame = ttk.Frame(g3) # Tạo một frame chứa Treeview và scrollbar
+        macro_container_frame.grid(row=1, column=0, sticky='nsew', padx=5, pady=(5, 5))
+        self.tree_macro = self._create_treeview_macro(macro_container_frame)
 
         # G3: Hàng 2 - CÁC NÚT THÊM BƯỚC THỦ CÔNG ([+])
         g3_controls_add = ttk.Frame(g3)
