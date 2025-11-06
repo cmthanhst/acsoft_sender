@@ -316,6 +316,60 @@ class MacroStep:
 
 
 # =========================================================================
+# ------------------------------ HUD Window -------------------------------
+# =========================================================================
+
+class RecordingHUD(tk.Toplevel):
+    """
+    Một cửa sổ HUD nhỏ, luôn ở trên cùng, để hiển thị trạng thái ghi/phát
+    và cung cấp nút Stop.
+    """
+    def __init__(self, parent, stop_callback):
+        super().__init__(parent)
+        self.stop_callback = stop_callback
+
+        # Thiết lập cửa sổ HUD
+        self.overrideredirect(True)  # Bỏ viền và thanh tiêu đề
+        self.attributes('-topmost', True)  # Luôn ở trên cùng
+        self.attributes('-alpha', 0.9)  # Hơi trong suốt
+
+        # Tạo style cho các widget trong HUD
+        style = ttk.Style(self)
+        style.configure("HUD.TFrame", background="#282c34")
+        style.configure("HUD.TLabel", background="#282c34", foreground="white", font=("Arial", 10))
+        style.configure("HUD.TButton", font=("Arial", 9, "bold"), foreground="white")
+        style.map("HUD.TButton",
+                  background=[('active', '#e06c75'), ('!active', '#d15660')],
+                  foreground=[('active', 'white')])
+
+        # Frame chính của HUD
+        main_frame = ttk.Frame(self, style="HUD.TFrame", padding=(10, 5))
+        main_frame.pack()
+
+        # Label hiển thị trạng thái
+        self.status_label = ttk.Label(main_frame, text="Chuẩn bị...", style="HUD.TLabel")
+        self.status_label.pack(side="left", padx=(0, 15))
+
+        # Nút Stop
+        stop_button = ttk.Button(main_frame, text="■ STOP", style="HUD.TButton", command=self.stop_callback)
+        stop_button.pack(side="left")
+
+        # Căn giữa HUD ở cạnh trên màn hình
+        self.update_idletasks()
+        screen_width = self.winfo_screenwidth()
+        window_width = self.winfo_width()
+        x = (screen_width // 2) - (window_width // 2)
+        self.geometry(f"+{x}+20") # 20px từ cạnh trên
+
+    def update_status(self, text, color="white"):
+        """Cập nhật văn bản và màu sắc của label trạng thái."""
+        self.status_label.config(text=text, foreground=color)
+
+    def close(self):
+        self.destroy()
+
+
+# =========================================================================
 # ------------------------------ Tkinter App (Themed) ---------------------
 # =========================================================================
 
@@ -369,7 +423,7 @@ class MacroApp(ThemedTk):
         self.speed_mode = tk.IntVar(value=1)
         self.spin_speed_val = tk.IntVar(value=500)
         self.spin_between_val = tk.IntVar(value=2)
-        self.show_realtime_status = tk.BooleanVar(value=True)
+        self.show_realtime_status = tk.BooleanVar(value=False) # SỬA: Tắt theo mặc định để giảm lag
 
         self.txt_delimiter = None
         self.txt_acpath = None
@@ -380,6 +434,7 @@ class MacroApp(ThemedTk):
         self.keyboard_listener = None
         self.current_modifiers = set()
 
+        self.hud_window = None
         self.realtime_status_frame = None
 
         self.setup_ui()
@@ -574,7 +629,7 @@ class MacroApp(ThemedTk):
         )
 
         # G3: Hàng 4 - Ghi chú cho Record
-        tk.Label(g3, text="Ghi: Insert->cột | Phím bất kỳ/Chuột Click->thao tác | End->hết dòng",
+        tk.Label(g3, text="Ghi: Insert->cột | Phím/Chuột->thao tác | ESC->kết thúc",
                  font=("Arial", 9, "italic"), fg="gray").grid(row=4, column=0, sticky="w", padx=5, pady=(5, 5))
         # ====================================================================
 
@@ -604,17 +659,30 @@ class MacroApp(ThemedTk):
         status_controls = ttk.Frame(self.realtime_status_frame)
         status_controls.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
 
-        self.lbl_realtime_status = tk.Label(status_controls, text="...", justify="left", anchor="w", fg="gray")
-        self.lbl_realtime_status.pack(side="left", fill="x", expand=True)
+        # --- SỬA LỖI LAYOUT: Dọn dẹp và cấu hình lại phần status real-time ---
+        # Cấu hình để label co giãn, nút check giữ nguyên
+        status_controls.grid_columnconfigure(0, weight=1)
 
+        # Label hiển thị thông tin, đặt ở cột 0
+        self.lbl_realtime_status = tk.Label(status_controls, text="...", justify="left", anchor="w", fg="gray")
+        self.lbl_realtime_status.grid(row=0, column=0, sticky="ew")
+        # Gán sự kiện để cập nhật wraplength khi kích thước label thay đổi
+        self.lbl_realtime_status.bind('<Configure>',
+                                      lambda e: self.lbl_realtime_status.config(wraplength=self.lbl_realtime_status.winfo_width() - 10))
+
+        # Nút Checkbox, đặt ở cột 1
         ttk.Checkbutton(status_controls, text="Hiện/Ẩn", variable=self.show_realtime_status,
-                        command=self._toggle_realtime_status).pack(side='right')
+                        command=self._toggle_realtime_status).grid(row=0, column=1, sticky="e", padx=(10, 0))
 
         # Disclaimer (now row 5)
         tk.Label(main_frame,
                  text="Lưu ý: Ứng dụng BẮT BUỘC đưa ACSOFT lên foreground (phải focus). Nhấn phím ESC để hủy quá trình chạy.",
                  wraplength=900, justify="left", fg="gray", font=("Arial", 8)).grid(row=5, column=0, sticky="w",
                                                                                     pady=(5, 0))
+
+        # SỬA: Áp dụng trạng thái ẩn/hiện ban đầu
+        # --- KẾT THÚC SỬA ---
+        self._toggle_realtime_status()
 
         # -------------------------- Real-time Status Update --------------------------
 
@@ -744,8 +812,8 @@ class MacroApp(ThemedTk):
                 self.cancel_run()
             return
 
-        # DỪNG GHI NGAY LẬP TỨC VỚI PHÍM END
-        if key == Key.end:
+        # SỬA: DỪNG GHI NGAY LẬP TỨC VỚI PHÍM ESC
+        if key == Key.esc:
             # Ghi bước END cuối cùng với độ trễ
             current_time = time.time()
             if self.last_key_time == 0.0:
@@ -849,37 +917,31 @@ class MacroApp(ThemedTk):
         self.stop_listeners()
         self.current_modifiers.clear()
 
-        countdown_win = tk.Toplevel(self)
-        countdown_win.title("Chuẩn bị ghi")
-        countdown_win.geometry("400x200")
-        countdown_win.attributes('-topmost', True)
-        # Cần bind ESC để dừng khi đang trong Toplevel
-        countdown_win.bind('<Escape>', lambda e: self.cancel_run())
-
-        lbl_countdown = tk.Label(countdown_win, text="", font=("Arial", 36, "bold"), fg="#1e90ff", justify=tk.CENTER,
-                                 wraplength=380)
-        lbl_countdown.pack(expand=True)
+        # SỬA: Sử dụng HUD thay cho cửa sổ đếm ngược
+        self.hud_window = RecordingHUD(self, self.cancel_run)
 
         for i in range(5, 0, -1):
             if self.cancel_flag.is_set():
-                if countdown_win.winfo_exists(): countdown_win.destroy()
+                if self.hud_window: self.hud_window.close()
                 self.after(0, self.stop_recording)
                 return
-            lbl_countdown.config(text=f"BẮT ĐẦU GHI SAU\n{i}")
+            # Cập nhật HUD
+            self.after(0, self.hud_window.update_status, f"Bắt đầu ghi sau: {i}s", "#87CEEB")
             self.update_idletasks()
             time.sleep(1)
 
         if not self.cancel_flag.is_set():
-            # TÌM CỬA SỔ & FOCUS
+            # Focus cửa sổ mục tiêu
             hwnd = hwnd_from_title(self.target_window_title)
             if hwnd:
                 bring_to_front(hwnd)
 
-            lbl_countdown.config(text="ĐANG GHI...\n(Nhấn END để kết thúc)", fg="#FF4500", font=("Arial", 16, "bold"))
+            # Cập nhật HUD sang trạng thái đang ghi
+            self.after(0, self.hud_window.update_status, "🔴 ĐANG GHI... (Nhấn ESC để dừng)", "#FF4500")
             self.update_idletasks()
             self.after(100, self._start_listeners)
-
-        if countdown_win.winfo_exists(): countdown_win.destroy()
+        else:
+            if self.hud_window: self.hud_window.close()
 
     def _start_listeners(self):
         if not self.recording: return
@@ -897,11 +959,8 @@ class MacroApp(ThemedTk):
         self.stop_listeners()
         self.recording = False
 
-        # Đóng cửa sổ countdown nếu nó còn tồn tại
-        for widget in self.winfo_children():
-            if isinstance(widget, tk.Toplevel) and widget.title() == "Chuẩn bị ghi":
-                widget.destroy()
-                break
+        # Đóng HUD nếu nó tồn tại
+        if self.hud_window: self.hud_window.close()
 
         # Chỉ hiển thị thông báo nếu không bị hủy bởi ESC (dấu hiệu của việc chạy)
         if not self.cancel_flag.is_set():
@@ -963,30 +1022,25 @@ class MacroApp(ThemedTk):
         threading.Thread(target=self._countdown_and_run_worker, args=(test_mode,), daemon=True).start()
 
     def _countdown_and_run_worker(self, test_mode):
-        countdown_win = tk.Toplevel(self)
-        countdown_win.title("Chuẩn bị chạy")
-        countdown_win.geometry("400x200")
-        countdown_win.attributes('-topmost', True)
-        countdown_win.bind('<Escape>', lambda e: self.cancel_run())
-
-        lbl_countdown = tk.Label(countdown_win, text="", font=("Arial", 36, "bold"), fg="#1e90ff", justify=tk.CENTER,
-                                 wraplength=380)
-        lbl_countdown.pack(expand=True)
+        # SỬA: Sử dụng HUD thay cho cửa sổ đếm ngược
+        self.hud_window = RecordingHUD(self, self.cancel_run)
 
         for i in range(5, 0, -1):
             if self.cancel_flag.is_set():
-                if countdown_win.winfo_exists(): countdown_win.destroy()
+                if self.hud_window: self.hud_window.close()
                 self.after(0, self._reset_buttons)
                 return
-            lbl_countdown.config(text=f"BẮT ĐẦU CHẠY SAU\n{i}")
+            # Cập nhật HUD
+            self.after(0, self.hud_window.update_status, f"Bắt đầu chạy sau: {i}s", "#87CEEB")
             self.update_idletasks()
             time.sleep(1)
 
-        if countdown_win.winfo_exists(): countdown_win.destroy()
-
         if not self.cancel_flag.is_set():
+            # Cập nhật HUD sang trạng thái đang chạy
+            self.after(0, self.hud_window.update_status, "▶️ ĐANG CHẠY...", "#98FB98")
             self._macro_run_worker(test_mode)
         else:
+            if self.hud_window: self.hud_window.close()
             self.after(0, self._reset_buttons)
             self.cancel_flag.clear()
 
@@ -1045,6 +1099,7 @@ class MacroApp(ThemedTk):
         finally:
             escape_listener.stop()
             self.after(0, self._reset_buttons)
+            if self.hud_window: self.after(0, self.hud_window.close)
             self.after(0, self._clear_macro_highlights)
             self.cancel_flag.clear()
 
@@ -1425,6 +1480,9 @@ class MacroApp(ThemedTk):
         self.btn_runall.config(state='normal')
         self.btn_stop.config(state='disabled')
         self.lbl_status.config(text="Chờ...")
+        if self.hud_window:
+            self.hud_window.close()
+            self.hud_window = None
 
     def _highlight_macro_step(self, step):
         for item_id in self.tree_macro.get_children():
