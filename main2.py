@@ -1,6 +1,7 @@
 import sys
 import os
 import base64
+import ctypes # SỬA: Thêm thư viện ctypes để tương tác với Windows API
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QLineEdit,
     QFileDialog, QMessageBox, QFrame, QVBoxLayout, QHBoxLayout, QGridLayout,
@@ -41,16 +42,17 @@ class RecordingHUD(QDialog):
         layout = QHBoxLayout(self.main_frame)
         layout.setContentsMargins(10, 5, 10, 5)
 
-        self.status_label = QLabel("Chuẩn bị...")
-        self.status_label.setFont(QFont("Courier", 10))
+        self.status_label = QLabel("Chuẩn bị...") # Font được định nghĩa trong dark.qss
+        self.status_label.setObjectName("hudStatusLabel") # Để có thể target trong QSS nếu cần
         layout.addWidget(self.status_label) # Style cho QLabel được định nghĩa trong dark.qss
 
-        self.pause_button = QPushButton("❚❚ PAUSE")
-        self.pause_button.setFont(QFont("Courier", 9, QFont.Bold))
+        self.pause_button = QPushButton("❚❚ PAUSE") # Font được định nghĩa trong dark.qss
+        self.pause_button.setObjectName("hudPauseButton")
         self.pause_button.hide() # Ẩn ban đầu
         layout.addWidget(self.pause_button)
 
-        self.stop_button = QPushButton("■ STOP")
+        self.stop_button = QPushButton("■ STOP") # Font được định nghĩa trong dark.qss
+        self.stop_button.setObjectName("hudStopButton")
         layout.addWidget(self.stop_button)
 
         # Layout chính của Dialog
@@ -90,6 +92,15 @@ class MacroApp(QMainWindow):
         self.setWindowTitle("Việt Tín Auto Sender V2025.04")
         # SỬA: Xóa kích thước cố định, chỉ đặt chiều rộng và để chiều cao tự động
         # self.resize(1200, 800)
+        # Load logo và set icon cho taskbar
+        try:
+            with open('logo_base64.txt', 'r') as f:
+                logo_base64 = f.read().strip()
+            pixmap = QPixmap()
+            pixmap.loadFromData(base64.b64decode(logo_base64))
+            self.setWindowIcon(QIcon(pixmap))
+        except FileNotFoundError:
+            print("Lỗi: Không tìm thấy file 'logo_base64.txt'. Không set icon.")
         self.setFixedWidth(1200)
 
         # Frame chính với bo góc
@@ -121,18 +132,9 @@ class MacroApp(QMainWindow):
         # SỬA: Yêu cầu cửa sổ tự điều chỉnh kích thước sau khi đã tạo xong mọi thứ
         self.adjustSize()
 
-    def paintEvent(self, event):
-        """Vẽ nền bo góc cho cửa sổ chính."""
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        
-        # Màu nền dựa trên theme
-        bg_color = QColor("#282c34") if self.is_dark_mode else QColor("#f0f0f0")
-        
-        # Vẽ hình chữ nhật bo góc
-        painter.setBrush(QBrush(bg_color))
-        painter.setPen(Qt.NoPen)
-        painter.drawRoundedRect(self.rect(), 15, 15)
+    # SỬA: Xóa bỏ paintEvent và resizeEvent vì việc bo góc giờ đã được xử lý
+    # hoàn toàn bằng stylesheet trong file dark.qss, giúp code sạch hơn và
+    # hiệu quả hơn.
 
     def _create_header_bar(self):
         """Tạo thanh tiêu đề tùy chỉnh."""
@@ -149,8 +151,8 @@ class MacroApp(QMainWindow):
         header_layout.addWidget(logo_label)
 
         # Tiêu đề
-        title_label = QLabel("Việt Tín Auto Sender V2025.04")
-        title_label.setFont(QFont("Courier", 10, QFont.Bold))
+        title_label = QLabel("Việt Tín Auto Sender V2025.04") # Font được định nghĩa trong dark.qss
+        title_label.setObjectName("titleLabel") # Gán objectName để QSS có thể target
         header_layout.addWidget(title_label)
         header_layout.addStretch()
 
@@ -185,10 +187,20 @@ class MacroApp(QMainWindow):
 
         # Group 1: ACSOFT Path
         g1 = QGroupBox("1) Đường dẫn file chạy ACSOFT")
-        g1_layout = QHBoxLayout(g1)
+        # SỬA: Chuyển sang QVBoxLayout để có 2 dòng
+        g1_layout = QVBoxLayout(g1)
+
+        # Dòng 1: LineEdit
         g1_layout.addWidget(QLineEdit())
-        g1_layout.addWidget(QPushButton("Browse"))
-        g1_layout.addWidget(QPushButton("Mở ACSOFT"))
+
+        # Dòng 2: Các nút
+        button_container = QWidget() # Tạo container cho các nút
+        button_layout = QHBoxLayout(button_container)
+        button_layout.setContentsMargins(0, 0, 0, 0) # Xóa margin thừa
+        button_layout.addStretch() # Đẩy các nút về bên phải
+        button_layout.addWidget(QPushButton("Browse"))
+        button_layout.addWidget(QPushButton("Chạy ACSOFT"))
+        g1_layout.addWidget(button_container)
 
         # Group 2: CSV and Target Window
         g2 = QGroupBox("2) File CSV chứa dữ liệu / Cửa sổ mục tiêu")
@@ -202,9 +214,14 @@ class MacroApp(QMainWindow):
 
         window_layout = QHBoxLayout()
         window_layout.addWidget(QLabel("Delimiter:"))
-        window_layout.addWidget(QLineEdit(";"))
+        # SỬA: Đặt chiều rộng cố định cho LineEdit của Delimiter
+        delimiter_edit = QLineEdit(";")
+        delimiter_edit.setFixedWidth(40)
+        window_layout.addWidget(delimiter_edit)
         window_layout.addWidget(QLabel("Cửa sổ:"))
-        window_layout.addWidget(QComboBox())
+        # SỬA: Thêm stretch factor để ComboBox lấp đầy không gian còn trống
+        combo_windows = QComboBox()
+        window_layout.addWidget(combo_windows, 1) # Stretch factor = 1
         window_layout.addWidget(QPushButton("Làm mới"))
         g2_layout.addLayout(window_layout)
 
@@ -222,8 +239,10 @@ class MacroApp(QMainWindow):
 
         delay_layout = QHBoxLayout()
         delay_layout.addWidget(QLabel("Đợi giữa 2 dòng (1-20 giây):"))
-        delay_layout.addWidget(QSpinBox())
-        delay_layout.addStretch()
+        # SỬA: Cho QSpinBox giãn ra để lấp đầy không gian còn trống
+        spin_delay_between_rows = QSpinBox()
+        delay_layout.addWidget(spin_delay_between_rows, 1) # Thêm stretch factor = 1
+        # Xóa addStretch() để cho phép widget co giãn
         g4_layout.addLayout(delay_layout)
 
         top_controls_layout.addWidget(g1, 1)
@@ -252,7 +271,9 @@ class MacroApp(QMainWindow):
 
         # -- Macro Controls --
         record_controls = QHBoxLayout()
-        record_controls.addWidget(QPushButton("⚫ Record Macro (5s chuẩn bị)"))
+        record_btn = QPushButton("⚫ Record Macro (5s chuẩn bị)")
+        record_btn.setObjectName("recordButton") # Gán ID cho nút Record
+        record_controls.addWidget(record_btn)
         record_controls.addStretch()
         record_controls.addWidget(QPushButton("Lưu Macro"))
         record_controls.addWidget(QPushButton("Mở Macro"))
@@ -300,12 +321,18 @@ class MacroApp(QMainWindow):
         run_layout.setContentsMargins(10, 0, 10, 10)
 
         run_layout.addWidget(QLabel("Chọn Chế độ Chạy:"))
-        run_layout.addWidget(QPushButton("►CHẠY THỬ (1 DÒNG)"))
-        run_layout.addWidget(QPushButton("►CHẠY TẤT CẢ"))
-        run_layout.addWidget(QPushButton("STOP (ESC)"))
+        run_test_btn = QPushButton("► CHẠY THỬ (1 DÒNG)")
+        run_test_btn.setObjectName("runTestButton") # Gán ID
+        run_layout.addWidget(run_test_btn)
+        run_all_btn = QPushButton("► CHẠY TẤT CẢ")
+        run_all_btn.setObjectName("runAllButton") # Gán ID
+        run_layout.addWidget(run_all_btn)
+        stop_btn = QPushButton("STOP (ESC)")
+        stop_btn.setObjectName("stopButton") # Gán ID
+        run_layout.addWidget(stop_btn)
         run_layout.addStretch()
-        self.lbl_status = QLabel("Chờ...")
-        self.lbl_status.setFont(QFont("Courier", 10, QFont.Bold))
+        self.lbl_status = QLabel("Chờ...") # Font được định nghĩa trong dark.qss
+        self.lbl_status.setObjectName("statusLabel") # Gán objectName để QSS có thể target
         run_layout.addWidget(self.lbl_status)
 
         self.main_layout.addWidget(run_widget)
@@ -329,7 +356,8 @@ class MacroApp(QMainWindow):
 
     def _create_disclaimer(self):
         """Tạo dòng ghi chú cuối cùng."""
-        disclaimer_label = QLabel("Lưu ý: Ứng dụng BẮT BUỘC đưa ACSOFT lên foreground (phải focus). Nhấn phím ESC để hủy quá trình chạy.")
+        disclaimer_label = QLabel("Lưu ý: Ứng dụng BẮT BUỘC đưa ACSOFT lên foreground (phải focus). Nhấn phím ESC để hủy quá trình chạy.") # Font được định nghĩa trong dark.qss
+        disclaimer_label.setObjectName("disclaimerLabel") # Gán objectName để QSS có thể target
         disclaimer_label.setWordWrap(True)
         
         frame = QFrame()
@@ -370,9 +398,14 @@ class MacroApp(QMainWindow):
             self.dark_mode_btn.setText("◐")
         
         self.setStyleSheet(stylesheet)
-        self.update() # Yêu cầu vẽ lại cửa sổ để áp dụng paintEvent
+        # self.update() # Không cần thiết nữa khi không dùng paintEvent
 
 if __name__ == "__main__":
+    # SỬA: Đặt AppUserModelID để Windows hiển thị đúng icon trên taskbar
+    # Đây là bước quan trọng để Windows không nhóm ứng dụng của bạn với Python.
+    myappid = 'viettin.autosoft.sender.2025' # Chuỗi ID duy nhất cho ứng dụng
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
     app = QApplication(sys.argv)
     
     # Hiển thị HUD để kiểm tra

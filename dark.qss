@@ -1,13 +1,38 @@
 /* dark.qss */
 QWidget {
-    background-color: #282c34; /* Màu nền chung tối */
-    font-family: Courier; /* Đặt font chữ mặc định là Courier */
+    background-color: #002c3400; /* Màu nền chung tối */
+    font-family: Courier; /* Đặt font chữ mặc định là Courier cho toàn bộ ứng dụng */
     color: #a9b7c6; /* Màu chữ chung */
     font-size: 10pt;
 }
 
 QMainWindow, #mainFrame { /* Styles cho cửa sổ chính và central widget */
     background-color: #282c34;
+}
+
+/* SỬA: Font cho tiêu đề ứng dụng */
+#titleLabel {
+    font-size: 16pt;
+    font-weight: bold;
+    color: white;
+}
+
+/* SỬA: Font cho label trạng thái chạy */
+#statusLabel {
+    font-size: 10pt;
+    font-weight: bold;
+    color: #1e90ff; /* Giữ màu xanh ban đầu */
+}
+
+/* SỬA: Font cho label ghi chú cuối cùng */
+#disclaimerLabel {
+    font-style: italic;
+}
+
+/* SỬA: Thêm quy tắc này để bo góc cho central widget */
+#mainFrame {
+    border-radius: 20px;
+    border: 1px solid #282c34; /* Thêm viền để thấy rõ hơn */
 }
 
 QGroupBox {
@@ -88,8 +113,8 @@ RecordingHUD #mainFrame { /* QFrame bên trong RecordingHUD */
 }
 
 RecordingHUD QLabel {
-    color: white; /* Ghi đè màu QWidget mặc định cho label trong HUD */
-    font-family: Courier;
+    color: white; /* Màu chữ trắng cho HUD status label */
+    font-size: 10pt;
 }
 
 RecordingHUD QPushButton {
@@ -98,8 +123,8 @@ RecordingHUD QPushButton {
     border: 1px solid #555;
     padding: 5px 10px;
     border-radius: 3px;
-    font-family: Courier; /* Đảm bảo font Courier cho nút HUD */
-    font-weight: bold; /* Giống font đậm từ phiên bản Tkinter */
+    font-size: 9pt;
+    font-weight: bold;
 }
 
 RecordingHUD QPushButton:hover {
@@ -116,4 +141,24 @@ RecordingHUD QPushButton[text="■ STOP"] {
 }
 RecordingHUD QPushButton[text="■ STOP"]:hover {
     background-color: #c82333;
+}
+
+/* SỬA: Style cho các nút màu đặc biệt trên cửa sổ chính */
+
+/* Nút màu xanh lá (Success) */
+#runTestButton, #runAllButton {
+    background-color: #28a745; /* Green */
+    font-weight: bold;
+}
+#runTestButton:hover, #runAllButton:hover {
+    background-color: #218838; /* Darker Green */
+}
+
+/* Nút màu đỏ (Danger) */
+#recordButton, #stopButton {
+    background-color: #dc3545; /* Red */
+    font-weight: bold;
+}
+#recordButton:hover, #stopButton:hover {
+    background-color: #c82333; /* Darker Red */
 }
