@@ -3,11 +3,18 @@ from tkinter import filedialog, messagebox, ttk
 import os
 import time
 import threading
-import pandas as pd
+# Cần cài đặt: pip install pandas
+try:
+    import pandas as pd
+except ImportError:
+    messagebox.showerror("Lỗi Cài Đặt", "Vui lòng chạy 'pip install pandas' để cài đặt thư viện xử lý CSV.")
+    exit()
+
 import subprocess
 import ctypes
 import json
 from decimal import Decimal
+from enum import Enum, auto
 
 # Cần cài đặt: pip install ttkthemes
 try:
@@ -240,6 +247,15 @@ def send_mouse_click(hwnd, x_offset_logical, y_offset_logical, button_type, reco
 # ------------------------------ Macro Model ------------------------------
 # =========================================================================
 
+class MacroStepType(Enum):
+    """Defines the types of steps in a macro for better type safety."""
+    COLUMN_DATA = "col"
+    MOUSE_CLICK = "mouse"
+    KEY_PRESS = "key"
+    KEY_COMBO = "combo"
+    END_OF_ROW = "end"
+
+
 class MacroStep:
     def __init__(
         self,
@@ -266,10 +282,10 @@ class MacroStep:
         delay_ms = int(self.delay_after * 1000)
         delay_str = f"(Chờ: {delay_ms}ms)"
 
-        if self.typ == "col":
+        if self.typ == MacroStepType.COLUMN_DATA.value:
             col_display = self.col_index + 1 if self.col_index is not None else "N/A"
             return f"[COL] Gửi giá trị cột {col_display} {delay_str}"
-        elif self.typ == "mouse":
+        elif self.typ == MacroStepType.MOUSE_CLICK.value:
             # HIỂN THỊ DƯỚNG DẠNG PIXEL OFFSET CHUẨN (100% SCALE)
 
             scale = self.dpi_scale if self.dpi_scale > 0 else 1.0
@@ -280,11 +296,11 @@ class MacroStep:
 
             click_type = self.key_value.replace("_click", "").capitalize()
             return f"[MOUSE] {click_type} Click tại Offset Chuẩn ({x_norm}px, {y_norm}px) (Scale Ghi: {int(self.dpi_scale * 100)}%) {delay_str}"
-        elif self.typ == "key":
+        elif self.typ == MacroStepType.KEY_PRESS.value:
             return f"[KEY] Gửi phím: '{self.key_value.upper()}' {delay_str}"
-        elif self.typ == "combo":
+        elif self.typ == MacroStepType.KEY_COMBO.value:
             return f"[COMBO] Gửi tổ hợp phím: '{self.key_value.upper()}' {delay_str}"
-        elif self.typ == "end":
+        elif self.typ == MacroStepType.END_OF_ROW.value:
             return f"[END] Kết thúc dòng {delay_str}"
         return f"<{self.typ}>"
 
@@ -419,35 +435,33 @@ class RecordingHUD(tk.Toplevel):
 # ------------------------------ Tkinter App (Themed) ---------------------
 # =========================================================================
 
-LOGO_PNG_BASE64 = b"iVBORw0KGgoAAAANSUhEUgAAAOIAA..."  # Placeholder
+LOGO_PNG_BASE64 = b"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"  # Placeholder
 
 
 class MacroApp(ThemedTk):
     def __init__(self):
         super().__init__(theme="arc")
 
-        self.option_add("*font", "Arial 9")
-        # Tải Logo (Placeholder)
+        self.option_add("*font", "Arial 9") # SỬA: Tải logo từ chuỗi Base64
         original_image = None
         try:
-            # Placeholder for Logo loading
-            logo_placeholder = Image.new("RGB", (60, 20), color="#1e90ff")
-            d = ImageDraw.Draw(logo_placeholder)
+            logo_data = base64.b64decode(LOGO_PNG_BASE64)
+            original_image = Image.open(io.BytesIO(logo_data))
+        except Exception as e:
+            messagebox.showerror("Lỗi Logo", f"Không thể tải logo từ Base64: {e}")
+            # Tạo ảnh placeholder nếu không tìm thấy logo
+            original_image = Image.new('RGB', (60, 20), color='#1e90ff')
+            d = ImageDraw.Draw(original_image)
             d.text((5, 5), "VT", fill=(255, 255, 255))
-            original_image = logo_placeholder
-        except Exception:
-            logo_placeholder = Image.new('RGB', (60, 20), color='#1e90ff')
-            d = ImageDraw.Draw(logo_placeholder)
-            d.text((5, 5), "VT", fill=(255, 255, 255))
-            original_image = logo_placeholder
 
         icon_image = original_image.copy()
-        icon_image.thumbnail((32, 32), Image.Resampling.LANCZOS)
+        icon_image.thumbnail((64, 64), Image.Resampling.LANCZOS)
         self.app_icon = ImageTk.PhotoImage(icon_image)
         self.iconphoto(True, self.app_icon)
 
         header_image = original_image.copy()
-        header_image.thumbnail((60, 20), Image.Resampling.LANCZOS)
+        # SỬA: Tăng kích thước logo để cân đối với tiêu đề
+        header_image.thumbnail((36, 36), Image.Resampling.LANCZOS)
         self.header_logo = ImageTk.PhotoImage(header_image)
 
         self.title("Việt Tín Auto Sender V2025.04 (Fix & Layout Update)")
@@ -492,10 +506,8 @@ class MacroApp(ThemedTk):
         self.style.map("Highlight.Treeview", background=[("selected", "#FFA07A"), ("active", "#e1e1e1")])
         self.style.configure('Accent.TButton', font=('Arial', 9, 'bold'))
 
-        self.update_idletasks()
-        self.minsize(950, 750)
-
         self.protocol("WM_DELETE_WINDOW", self.on_app_close)
+        self.resizable(False, False) # SỬA: Vô hiệu hóa thay đổi kích thước cửa sổ
 
         # BẮT ĐẦU VÒNG LẶP CẬP NHẬT TRẠNG THÁI REAL-TIME
         self._update_status_bar_info()
@@ -575,7 +587,7 @@ class MacroApp(ThemedTk):
 
         self.refresh_windows()
 
-        g4 = ttk.LabelFrame(top_controls_frame, text="4) Tùy chọn chạy")
+        g4 = ttk.LabelFrame(top_controls_frame, text="3) Tùy chọn chạy")
         g4.grid(row=0, column=2, sticky="nwe", pady=5)
         g4.grid_columnconfigure(0, weight=1)
 
@@ -599,8 +611,7 @@ class MacroApp(ThemedTk):
         tk.Label(g4l_delay, text="Đợi giữa 2 dòng (1-20 giây):").pack(side="left")
         self.spin_between = ttk.Spinbox(g4l_delay, from_=1, to=20, textvariable=self.spin_between_val, width=5)
         self.spin_between.pack(side="left", padx=5)
-        self.spin_between = ttk.Spinbox(g4l_delay, from_=1, to=20, textvariable=self.spin_between_val, width=5) # This line seems to be missing from the original diff, but it's correct.
-        self.spin_between.pack(side="left", padx=5) # This line seems to be missing from the original diff, but it's correct.
+
 
         # ====================================================================
         # KHUNG CHỨA DỮ LIỆU VÀ MACRO (SIDE-BY-SIDE)
@@ -624,7 +635,7 @@ class MacroApp(ThemedTk):
         # csv_container_frame.grid(row=0, column=0, sticky='nsew', padx=5, pady=5) # Dòng này đã bị loại bỏ
 
         # --- CỘT PHẢI: GHI MACRO (G3) - Ô MÀU XANH/ĐỎ ---
-        g3 = ttk.LabelFrame(g_data_macro, text="3) Ghi Macro & Điều chỉnh")
+        g3 = ttk.LabelFrame(g_data_macro, text="4) Ghi Macro & Điều chỉnh")
         g3.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
         # Cấu hình Hàng 1 (Treeview) là hàng DUY NHẤT để co giãn lấp đầy không gian còn lại
         g3.grid_rowconfigure(1, weight=1)
@@ -735,15 +746,20 @@ class MacroApp(ThemedTk):
 
     def _toggle_realtime_status(self):
         """Toggle the visibility of the real-time status frame."""
-        # Hàm này chỉ có mục đích là được gọi bởi Checkbutton,
-        # logic chính nằm trong _update_status_bar_info
-        pass
+        # Nếu checkbox được bật, bắt đầu vòng lặp cập nhật.
+        # Nếu checkbox bị tắt, vòng lặp sẽ tự dừng ở lần chạy tiếp theo.
+        if self.show_realtime_status.get():
+            self.lbl_realtime_status.config(text="Đang tải thông tin...")
+            self._update_status_bar_info()
+        else:
+            # Xóa văn bản khi bị ẩn đi
+            self.lbl_realtime_status.config(text="...")
 
     def _update_status_bar_info(self):
+        # Chỉ thực hiện công việc và lên lịch lại nếu checkbox được bật
         if self.show_realtime_status.get():
-            hwnd = hwnd_from_title(self.target_window_title)
-
             try:
+                hwnd = hwnd_from_title(self.target_window_title)
                 # 1. Screen Dimensions (Logical Pixels)
                 screen_w = win32api.GetSystemMetrics(win32con.SM_CXSCREEN)
                 screen_h = win32api.GetSystemMetrics(win32con.SM_CYSCREEN)
@@ -787,7 +803,8 @@ class MacroApp(ThemedTk):
             except Exception as e:
                 self.lbl_realtime_status.config(text=f"Lỗi cập nhật trạng thái: {e}")
 
-        self.after(200, self._update_status_bar_info)
+            # Lên lịch cho lần cập nhật tiếp theo
+            self.after(200, self._update_status_bar_info)
 
     # -------------------------- Recording Listeners --------------------------
 
@@ -956,7 +973,9 @@ class MacroApp(ThemedTk):
         threading.Thread(target=self._countdown_and_record, daemon=True).start()
 
     def _on_escape_press(self, key):
+        print(f"Key pressed during countdown: {key}")
         if key == keyboard.Key.esc:
+            self.cancel_flag.set()
             self.cancel_run()
 
     def _countdown_and_record(self):
@@ -1189,7 +1208,7 @@ class MacroApp(ThemedTk):
 
             self.after(0, self._highlight_macro_step, step)
 
-            if step.typ == "col":
+            if step.typ == MacroStepType.COLUMN_DATA.value:
                 col_index = step.col_index
                 if col_index is not None and col_index < len(row_data):
                     value = row_data[col_index]
@@ -1198,15 +1217,15 @@ class MacroApp(ThemedTk):
                     )
                     send_char_to_hwnd(hwnd, str(value))
 
-            elif step.typ == "key":
+            elif step.typ == MacroStepType.KEY_PRESS.value:
                 self.after(0, self.lbl_status.config, {'text': f"ĐANG GỬI PHÍM: {step.key_value.upper()}"})
                 send_key_to_hwnd(hwnd, step.key_value)
 
-            elif step.typ == "combo":
+            elif step.typ == MacroStepType.KEY_COMBO.value:
                 self.after(0, self.lbl_status.config, {'text': f"ĐANG GỬI TỔ HỢP PHÍM: {step.key_value.upper()}"})
                 send_combo_to_hwnd(hwnd, step.key_value)
 
-            elif step.typ == "mouse":
+            elif step.typ == MacroStepType.MOUSE_CLICK.value:
                 # SỬ DỤNG TỌA ĐỘ CHUẨN ĐỂ HIỂN THỊ TRẠNG THÁI
                 scale = step.dpi_scale if step.dpi_scale > 0 else 1.0
                 if scale == 0: scale = 1.0 # Defensive check
