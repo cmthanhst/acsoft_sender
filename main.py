@@ -383,7 +383,7 @@ class RecordingHUD(tk.Toplevel):
         self.pause_button.pack_forget() # Ẩn nút pause ban đầu
 
         # Nút Stop
-        stop_button = ttk.Button(main_frame, text="■ STOP", style="HUD.TButton", command=self.stop_callback)
+        stop_button = ttk.Button(main_frame, text="■ STOP", style="Pause.TButton", command=self.stop_callback)
         stop_button.pack(side="left")
 
         # Gán sự kiện để di chuyển HUD
@@ -812,7 +812,7 @@ class MacroApp(ThemedTk):
         g3_controls_record.grid(row=0, column=0, sticky='ew', padx=5, pady=(5, 5))
 
         self.btn_record = ttk.Button(g3_controls_record, text="⚫ Record Macro (5s chuẩn bị)", command=self.record_macro,
-                                     style='Accent.TButton')
+                                     style='Danger.TButton')
         self.btn_record.pack(side="left", padx=(0, 10))
 
         ttk.Button(g3_controls_record, text="Lưu Macro", command=self.save_macro).pack(side="left", padx=5)
@@ -864,13 +864,13 @@ class MacroApp(ThemedTk):
 
         ttk.Label(g5, text="Chọn Chế độ Chạy:", font=('TkDefaultFont', 9, 'bold')).pack(side="left", padx=(0, 10))
 
-        self.btn_test = ttk.Button(g5, text="►CHẠY THỬ (1 DÒNG)", command=self.on_test, style='Accent.TButton')
+        self.btn_test = ttk.Button(g5, text="►CHẠY THỬ (1 DÒNG)", command=self.on_test, style='Success.TButton')
         self.btn_test.pack(side="left", padx=10)
 
-        self.btn_runall = ttk.Button(g5, text="►CHẠY TẤT CẢ", command=self.on_run_all, style='Accent.TButton')
+        self.btn_runall = ttk.Button(g5, text="►CHẠY TẤT CẢ", command=self.on_run_all, style='Success.TButton')
         self.btn_runall.pack(side="left", padx=10)
 
-        self.btn_stop = ttk.Button(g5, text="STOP (ESC)", command=self.on_cancel, state='disabled')
+        self.btn_stop = ttk.Button(g5, text="STOP (ESC)", command=self.cancel_run, state='disabled', style='Danger.TButton')
         self.btn_stop.pack(side="left", padx=10)
 
         self.lbl_status = ttk.Label(g5, text="Chờ...", foreground="#1e90ff", font=('TkDefaultFont', 10, 'bold'))
@@ -908,6 +908,40 @@ class MacroApp(ThemedTk):
         # --- KẾT THÚC SỬA ---
         self._toggle_realtime_status()
 
+    def _setup_colored_button_styles(self):
+        """
+        THÊM: Tạo style cho các nút màu Success (xanh) và Danger (đỏ).
+        Đây là một kỹ thuật nâng cao để ghi đè hoàn toàn màu nền của TButton,
+        vốn bị các theme mặc định trên Windows kiểm soát chặt chẽ.
+        """
+        bold_font = ('TkDefaultFont', 9, 'bold')
+
+        # --- Style cho nút XANH (Success) ---
+        self.style.layout('Success.TButton', [
+            ('Button.border', {'sticky': 'nswe', 'border': '1', 'children': [
+                ('Button.padding', {'sticky': 'nswe', 'children': [
+                    ('Button.label', {'sticky': 'nswe'})
+                ]})
+            ]})
+        ])
+        self.style.configure('Success.TButton', font=bold_font, foreground='white', borderwidth=0, relief='flat')
+        self.style.map('Success.TButton',
+                       background=[('active', '#218838'), ('!disabled', '#28a745')],
+                       foreground=[('disabled', '#6c757d')],
+                       relief=[('pressed', 'sunken'), ('!pressed', 'raised')])
+
+        # --- Style cho nút ĐỎ (Danger) ---
+        self.style.layout('Danger.TButton', [
+            ('Button.border', {'sticky': 'nswe', 'border': '1', 'children': [
+                ('Button.padding', {'sticky': 'nswe', 'children': [
+                    ('Button.label', {'sticky': 'nswe'})
+                ]})
+            ]})
+        ])
+        self.style.configure('Danger.TButton', font=bold_font, foreground='white', borderwidth=0, relief='flat')
+        self.style.map('Danger.TButton',
+                       background=[('active', '#c82333'), ('!disabled', '#dc3545')])
+
     def _reapply_default_font_styles(self):
         """
         SỬA: Áp dụng lại các style font mặc định cho các widget ttk.
@@ -922,6 +956,8 @@ class MacroApp(ThemedTk):
         self.style.configure('TLabelframe.Label', font=bold_font)
         self.style.configure('TLabel', font=default_font)
         self.tree_macro.tag_configure('highlight', background='#FFA07A', font=bold_font)
+
+        self._setup_colored_button_styles()
     # -------------------------- UI Helpers (Theme, Status, etc.) --------------------------    
     def get_current_colors(self):
         """Trả về bộ màu (bg, fg, special_fg) cho theme hiện tại."""
@@ -1212,7 +1248,7 @@ class MacroApp(ThemedTk):
     def _on_escape_press(self, key):
         print(f"Key pressed during countdown: {key}")
         if key == keyboard.Key.esc:
-            self.cancel_flag.set()
+            
             self.cancel_run()
 
     def _countdown_and_record(self):
@@ -1224,7 +1260,7 @@ class MacroApp(ThemedTk):
         countdown_escape_listener.start()
 
         # SỬA: Sử dụng HUD thay cho cửa sổ đếm ngược
-        self.hud_window = RecordingHUD(self, self.cancel_run)
+        self.hud_window = RecordingHUD(self, stop_callback=self.cancel_run)
 
         try:
             for i in range(5, 0, -1):
@@ -1294,6 +1330,7 @@ class MacroApp(ThemedTk):
 
     def cancel_run(self):
         # Dừng cả Running và Recording
+        self.cancel_flag.set()
         is_running = self.btn_stop['state'] == 'normal'
         if is_running or self.recording:
             self.cancel_flag.set()
@@ -1340,7 +1377,7 @@ class MacroApp(ThemedTk):
         countdown_escape_listener = keyboard.Listener(on_press=self._on_escape_press)
         countdown_escape_listener.start()
 
-        self.hud_window = RecordingHUD(self, self.cancel_run)
+        self.hud_window = RecordingHUD(self, stop_callback=self.cancel_run)
 
         try:
             for i in range(5, 0, -1):
@@ -1954,4 +1991,6 @@ class MacroApp(ThemedTk):
 
 if __name__ == "__main__":
     app = MacroApp()
+    # Đảm bảo rằng cancel_run được gọi khi đóng ứng dụng
+    app.protocol("WM_DELETE_WINDOW", app.cancel_run)
     app.mainloop()
