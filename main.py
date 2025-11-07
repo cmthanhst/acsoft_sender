@@ -435,12 +435,21 @@ class RecordingHUD(tk.Toplevel):
 # ------------------------------ Tkinter App (Themed) ---------------------
 # =========================================================================
 
-LOGO_PNG_BASE64 = b"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"  # Placeholder
+LOGO_PNG_BASE64 = b"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"  # Placeholder
 
 
 class MacroApp(ThemedTk):
     def __init__(self):
         super().__init__(theme="arc")
+
+        # SỬA: Bỏ thanh tiêu đề mặc định của Windows
+        self.overrideredirect(True)
+        self._offset_x = 0
+        self._offset_y = 0
+        
+        # SỬA: Thêm biến trạng thái cho việc thu gọn cửa sổ
+        self.is_collapsed = False
+        self.normal_geometry = ""
 
         self.option_add("*font", "Arial 9") # SỬA: Tải logo từ chuỗi Base64
         original_image = None
@@ -464,8 +473,15 @@ class MacroApp(ThemedTk):
         header_image.thumbnail((36, 36), Image.Resampling.LANCZOS)
         self.header_logo = ImageTk.PhotoImage(header_image)
 
-        self.title("Việt Tín Auto Sender V2025.04 (Fix & Layout Update)")
+        # SỬA: Đặt lại title để hiển thị trên taskbar
+        self.title("Việt Tín Auto Sender V2025.04")
+        self._offset_x = 0
+        self._offset_y = 0
+        # self.title("...") # Không cần title nữa
         self.geometry("1000x800")
+        
+        # SỬA: Tạm thời ẩn cửa sổ để áp dụng style một cách an toàn
+        self.withdraw()
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -508,6 +524,7 @@ class MacroApp(ThemedTk):
         self.style.configure('Accent.TButton', font=('Arial', 9, 'bold'))
 
         self.protocol("WM_DELETE_WINDOW", self.on_app_close)
+        # self.resizable(False, False) # SỬA: Xóa bỏ dòng này để tránh xung đột
         self.resizable(False, False) # SỬA: Vô hiệu hóa thay đổi kích thước cửa sổ
 
         # BẮT ĐẦU VÒNG LẶP CẬP NHẬT TRẠNG THÁI REAL-TIME
@@ -515,6 +532,86 @@ class MacroApp(ThemedTk):
 
         # SỬA: Áp dụng theme ban đầu
         self.toggle_dark_mode()
+        
+        # SỬA: Gán sự kiện để bo góc cửa sổ khi kích thước thay đổi (chạy 1 lần lúc đầu)
+        self.bind("<Configure>", self._apply_rounding_region)
+        
+        # SỬA: Áp dụng việc xóa title bar ngay lập tức và sau đó hiển thị lại cửa sổ
+        self._remove_title_bar()
+        self.update_idletasks()
+        self.deiconify()
+
+
+        # SỬA: Hiển thị icon trên taskbar để có thể minimize/restore
+        self.after(10, lambda: self._set_appwindow())
+    def _on_title_bar_press(self, event):
+        self._offset_x = event.x
+        self._offset_y = event.y
+
+    def _on_title_bar_drag(self, event):
+        x = self.winfo_pointerx() - self._offset_x
+        y = self.winfo_pointery() - self._offset_y
+        self.geometry(f"+{x}+{y}")
+
+    def minimize_window(self):
+        self.iconify()
+        """SỬA: Thu gọn cửa sổ về thanh tiêu đề và di chuyển xuống góc phải."""
+        if not self.is_collapsed:
+            # Lưu lại vị trí và kích thước hiện tại
+            self.normal_geometry = self.geometry()
+            
+            # Ẩn các thành phần chính
+            self.top_controls_frame.grid_remove()
+            self.g_data_macro.grid_remove()
+            self.g5.grid_remove()
+            self.realtime_status_frame.grid_remove()
+            self.disclaimer_label.grid_remove()
+
+            # Tính toán vị trí góc dưới bên phải
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+            header_height = self.header_frame.winfo_height() + 20 # +20 padding
+            
+            self.geometry(f"{self.winfo_width()}x{header_height}+{screen_width - self.winfo_width()}+{screen_height - header_height - 40}") # 40px cho taskbar
+            self.minimize_btn.config(text=" ❐ ") # Thay đổi icon thành "phục hồi"
+            self.is_collapsed = True
+        else:
+            # Phục hồi lại cửa sổ
+            self.setup_ui() # Gọi lại để vẽ lại các widget
+            self.geometry(self.normal_geometry)
+            self.minimize_btn.config(text=" _ ")
+            self.is_collapsed = False
+
+    def _apply_rounding_region(self, event):
+        """SỬA: Áp dụng bo góc bằng phương pháp SetWindowRgn, đáng tin cậy hơn."""
+        try:
+            hwnd = self.winfo_id()
+            width, height = self.winfo_width(), self.winfo_height()
+            # Tạo một vùng hình chữ nhật bo góc với bán kính 20x20
+            rgn = win32gui.CreateRoundRectRgn(0, 0, width, height, 20, 20)
+            win32gui.SetWindowRgn(hwnd, rgn, True)
+        except Exception:
+            pass
+
+    def _remove_title_bar(self):
+        """SỬA: Xóa viền và thanh tiêu đề bằng WinAPI thay cho overrideredirect."""
+    def _set_appwindow(self):
+        """SỬA: Ép cửa sổ hiển thị trên taskbar."""
+        try:
+            hwnd = self.winfo_id()            
+            # SỬA: Xóa bỏ triệt để các style liên quan đến title bar và viền
+            style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+            style &= ~(win32con.WS_CAPTION | win32con.WS_THICKFRAME | win32con.WS_MINIMIZEBOX | win32con.WS_MAXIMIZEBOX)
+            win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, style)
+            # SỬA: Buộc cửa sổ vẽ lại với style mới ngay lập tức
+            win32gui.SetWindowPos(hwnd, None, 0, 0, 0, 0, win32con.SWP_FRAMECHANGED | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOZORDER | win32con.SWP_NOOWNERZORDER)
+            hwnd = self.winfo_id()
+            style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+            style |= win32con.WS_EX_APPWINDOW
+            win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, style)
+        except Exception:
+            pass
+    # --- KẾT THÚC THÊM HÀM ---
 
     def on_app_close(self):
         self.stop_listeners()
@@ -526,31 +623,66 @@ class MacroApp(ThemedTk):
         main_frame.grid_rowconfigure(2, weight=1)  # Dòng chứa CSV/Macro (g_data_macro)
         main_frame.grid_columnconfigure(0, weight=1)
 
-        header_frame = ttk.Frame(main_frame)
+        # SỬA: header_frame giờ là thanh tiêu đề tùy chỉnh
+        header_frame = tk.Frame(main_frame) # Dùng tk.Frame để dễ tùy chỉnh màu nền
+        self.header_frame = header_frame # Lưu tham chiếu
         header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        # SỬA: Cấu hình để nút chế độ tối đẩy sang phải
-        header_frame.grid_columnconfigure(3, weight=1)
-
+        header_frame.grid_columnconfigure(1, weight=1) # Cột chứa tiêu đề sẽ co giãn
 
         if self.header_logo:
-            tk.Label(header_frame, image=self.header_logo).pack(side="left", padx=(0, 5))
-        tk.Label(header_frame, text="Việt Tín Auto Sender V2025.04", font=("Arial", 18, "bold"), fg="#1e90ff").pack(
-            side="left", padx=(0, 10)
-        )
-        tk.Label(header_frame, text="Ghi macro (Phím, Chuột & Dữ liệu) & replay vào ACSOFT", font=("Arial", 10)).pack(
-            side="left", padx=10
-        )
+            logo_label = tk.Label(header_frame, image=self.header_logo)
+            logo_label.grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            logo_label.bind("<Button-1>", self._on_title_bar_press)
+            logo_label.bind("<B1-Motion>", self._on_title_bar_drag)
+
+        title_label = tk.Label(header_frame, text="Việt Tín Auto Sender V2025.04", font=("Arial", 10, "bold"))
+        title_label.grid(row=0, column=1, sticky='w', padx=10)
+        title_label.bind("<Button-1>", self._on_title_bar_press)
+        title_label.bind("<B1-Motion>", self._on_title_bar_drag)
 
         # SỬA: Thêm nút chuyển chế độ tối
-        dark_mode_check = ttk.Checkbutton(header_frame, text="Chế độ Tối", variable=self.dark_mode_var,
-                                          command=self.toggle_dark_mode, style="Switch.TCheckbutton")
-        dark_mode_check.pack(side="right", padx=10)
+        dark_mode_check = ttk.Checkbutton(header_frame, text="Tối", variable=self.dark_mode_var,
+                                          command=self.toggle_dark_mode, style="Switch.TCheckbutton", width=4)
+        dark_mode_check.grid(row=0, column=2, sticky='e', padx=5)
+
+        # SỬA: Frame chứa các nút điều khiển cửa sổ
+        window_controls_frame = tk.Frame(header_frame)
+        window_controls_frame.grid(row=0, column=3, sticky='e')
+
+        minimize_btn = tk.Label(window_controls_frame, text=" _ ", font=("Arial", 10, "bold"))
+        minimize_btn.pack(side="left")
+        minimize_btn.bind("<Button-1>", lambda e: self.minimize_window())
+        self.minimize_btn = tk.Label(window_controls_frame, text=" _ ", font=("Arial", 10, "bold"))
+        self.minimize_btn.pack(side="left")
+        self.minimize_btn.bind("<Button-1>", lambda e: self.minimize_window())
+
+        close_btn = tk.Label(window_controls_frame, text=" X ", font=("Arial", 10, "bold"))
+        close_btn.pack(side="left", padx=(0, 5))
+        close_btn.bind("<Button-1>", lambda e: self.on_app_close())
+
+        # SỬA: Gán sự kiện kéo thả cho các phần nền của thanh tiêu đề, TRỪ các nút điều khiển
+        for widget in [header_frame, window_controls_frame, logo_label, title_label]:
+            widget.bind("<Button-1>", self._on_title_bar_press)
+            widget.bind("<B1-Motion>", self._on_title_bar_drag)
+
+        # Gán sự kiện hover cho các nút
+        minimize_btn.bind("<Enter>", lambda e: e.widget.config(background="#6c757d"))
+        minimize_btn.bind("<Leave>", lambda e: self._update_widget_colors(header_frame, *self.get_current_colors()))
+        self.minimize_btn.bind("<Enter>", lambda e: e.widget.config(background="#6c757d"))
+        self.minimize_btn.bind("<Leave>", lambda e: self._update_widget_colors(header_frame, *self.get_current_colors()))
+        close_btn.bind("<Enter>", lambda e: e.widget.config(background="#dc3545"))
+        close_btn.bind("<Leave>", lambda e: self._update_widget_colors(header_frame, *self.get_current_colors()))
 
         top_controls_frame = ttk.Frame(main_frame)
         top_controls_frame.grid(row=1, column=0, sticky="ew", pady=5)
         top_controls_frame.grid_columnconfigure(0, weight=1)
         top_controls_frame.grid_columnconfigure(1, weight=2)
         top_controls_frame.grid_columnconfigure(2, weight=1)
+        self.top_controls_frame = ttk.Frame(main_frame)
+        self.top_controls_frame.grid(row=1, column=0, sticky="ew", pady=5)
+        self.top_controls_frame.grid_columnconfigure(0, weight=1)
+        self.top_controls_frame.grid_columnconfigure(1, weight=2)
+        self.top_controls_frame.grid_columnconfigure(2, weight=1)
 
         g1 = ttk.LabelFrame(top_controls_frame, text="1) Đường dẫn file chạy ACSOFT")
         g1.grid(row=0, column=0, sticky="nwe", padx=(0, 10), pady=5)
@@ -631,6 +763,9 @@ class MacroApp(ThemedTk):
         g_data_macro = ttk.Frame(main_frame)
         g_data_macro.grid(row=2, column=0, sticky="nsew", pady=5)
         g_data_macro.grid_rowconfigure(0, weight=1)
+        self.g_data_macro = ttk.Frame(main_frame)
+        self.g_data_macro.grid(row=2, column=0, sticky="nsew", pady=5)
+        self.g_data_macro.grid_rowconfigure(0, weight=1)
 
         # Cấu hình 2 cột: Cột 0 (CSV) và Cột 1 (Macro) đều co giãn bằng nhau
         g_data_macro.grid_columnconfigure(0, weight=1, uniform="group1")
@@ -706,6 +841,8 @@ class MacroApp(ThemedTk):
         # RUN BUTTONS
         g5 = ttk.Frame(main_frame)
         g5.grid(row=3, column=0, sticky="ew", pady=(5, 0))
+        self.g5 = ttk.Frame(main_frame)
+        self.g5.grid(row=3, column=0, sticky="ew", pady=(5, 0))
 
         tk.Label(g5, text="Chọn Chế độ Chạy:", font=("Arial", 9, "bold")).pack(side="left", padx=(0, 10))
 
@@ -753,29 +890,25 @@ class MacroApp(ThemedTk):
         # --- KẾT THÚC SỬA ---
         self._toggle_realtime_status()
 
-    # -------------------------- UI Helpers (Theme, Status, etc.) --------------------------
+    # -------------------------- UI Helpers (Theme, Status, etc.) --------------------------    
+    def get_current_colors(self):
+        """Trả về bộ màu (bg, fg, special_fg) cho theme hiện tại."""
+        if self.dark_mode_var.get():
+            return "#464646", "white", "#a9b7c6"
+        else:
+            return "#f0f0f0", "black", "gray"
 
     def toggle_dark_mode(self):
         """Chuyển đổi giữa theme sáng và tối."""
         is_dark = self.dark_mode_var.get()
         theme_name = "equilux" if is_dark else "arc"
         self.set_theme(theme_name)
-        
-        # Cập nhật màu sắc các thành phần tùy chỉnh
-        if is_dark:
-            # Màu cho chế độ tối
-            bg_color = "#464646"
-            fg_color = "white"
-            special_fg_color = "#a9b7c6" # Màu xám nhạt cho chữ phụ
-        else:
-            # Màu cho chế độ sáng
-            bg_color = "#f0f0f0" # Màu nền mặc định của Windows
-            fg_color = "black"
-            special_fg_color = "gray" # Màu xám cho chữ phụ
-            
+
+        bg_color, fg_color, special_fg_color = self.get_current_colors()
+
         # SỬA: Áp dụng màu nền cho cửa sổ chính
         self.config(background=bg_color)
-        
+
         # Cập nhật màu cho các label có màu tùy chỉnh
         for widget in self.winfo_children():
             self._update_widget_colors(widget, bg_color, fg_color, special_fg_color)
@@ -786,7 +919,8 @@ class MacroApp(ThemedTk):
             try:
                 # SỬA: Áp dụng màu cho các widget tk thông thường
                 widget_class = child.winfo_class()
-                if widget_class in ['Label', 'TFrame', 'Frame']: # Áp dụng cho Label và Frame
+                # Bỏ qua các nút ttk vì chúng đã có style riêng
+                if widget_class in ['Label', 'TFrame', 'Frame'] and not isinstance(child, ttk.Checkbutton):
                     child.config(background=bg)
                     # Chỉ đổi màu chữ cho Label, không đổi cho Frame
                     if widget_class == 'Label':
@@ -795,7 +929,7 @@ class MacroApp(ThemedTk):
                             child.config(fg=special_fg)
                         else:
                             child.config(fg=fg)
-                            
+
             except tk.TclError:
                 # Bỏ qua các widget không có thuộc tính 'font' (ví dụ: Frame, Scrollbar)
                 pass
