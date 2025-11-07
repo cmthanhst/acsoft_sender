@@ -483,6 +483,7 @@ class MacroApp(ThemedTk):
         self.speed_mode = tk.IntVar(value=1)
         self.spin_speed_val = tk.IntVar(value=500)
         self.spin_between_val = tk.IntVar(value=2)
+        self.dark_mode_var = tk.BooleanVar(value=True) # SỬA: Mặc định là giao diện tối
         self.show_realtime_status = tk.BooleanVar(value=False) # SỬA: Tắt theo mặc định để giảm lag
 
         self.txt_delimiter = None
@@ -512,6 +513,9 @@ class MacroApp(ThemedTk):
         # BẮT ĐẦU VÒNG LẶP CẬP NHẬT TRẠNG THÁI REAL-TIME
         self._update_status_bar_info()
 
+        # SỬA: Áp dụng theme ban đầu
+        self.toggle_dark_mode()
+
     def on_app_close(self):
         self.stop_listeners()
         self.destroy()
@@ -524,6 +528,9 @@ class MacroApp(ThemedTk):
 
         header_frame = ttk.Frame(main_frame)
         header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        # SỬA: Cấu hình để nút chế độ tối đẩy sang phải
+        header_frame.grid_columnconfigure(3, weight=1)
+
 
         if self.header_logo:
             tk.Label(header_frame, image=self.header_logo).pack(side="left", padx=(0, 5))
@@ -533,6 +540,11 @@ class MacroApp(ThemedTk):
         tk.Label(header_frame, text="Ghi macro (Phím, Chuột & Dữ liệu) & replay vào ACSOFT", font=("Arial", 10)).pack(
             side="left", padx=10
         )
+
+        # SỬA: Thêm nút chuyển chế độ tối
+        dark_mode_check = ttk.Checkbutton(header_frame, text="Chế độ Tối", variable=self.dark_mode_var,
+                                          command=self.toggle_dark_mode, style="Switch.TCheckbutton")
+        dark_mode_check.pack(side="right", padx=10)
 
         top_controls_frame = ttk.Frame(main_frame)
         top_controls_frame.grid(row=1, column=0, sticky="ew", pady=5)
@@ -710,7 +722,7 @@ class MacroApp(ThemedTk):
         self.lbl_status.pack(side="left", padx=(20, 0))
 
         # ------------------------ REAL-TIME STATUS FRAME ------------------------
-        self.realtime_status_frame = ttk.LabelFrame(main_frame, text="Thông tin Tọa độ (Real-time)")
+        self.realtime_status_frame = ttk.LabelFrame(main_frame, text="Thông tin Tọa độ (Real-time)", style="Dark.TLabelframe" if self.dark_mode_var.get() else "TLabelframe")
         self.realtime_status_frame.grid(row=4, column=0, sticky="ew", pady=(5, 0))
         self.realtime_status_frame.grid_columnconfigure(0, weight=1)
 
@@ -722,7 +734,7 @@ class MacroApp(ThemedTk):
         status_controls.grid_columnconfigure(0, weight=1)
 
         # Label hiển thị thông tin, đặt ở cột 0
-        self.lbl_realtime_status = tk.Label(status_controls, text="...", justify="left", anchor="w", fg="gray")
+        self.lbl_realtime_status = tk.Label(status_controls, text="...", justify="left", anchor="w")
         self.lbl_realtime_status.grid(row=0, column=0, sticky="ew")
         # Gán sự kiện để cập nhật wraplength khi kích thước label thay đổi
         self.lbl_realtime_status.bind('<Configure>',
@@ -734,15 +746,61 @@ class MacroApp(ThemedTk):
 
         # Disclaimer (now row 5)
         tk.Label(main_frame,
-                 text="Lưu ý: Ứng dụng BẮT BUỘC đưa ACSOFT lên foreground (phải focus). Nhấn phím ESC để hủy quá trình chạy.",
-                 wraplength=900, justify="left", fg="gray", font=("Arial", 8)).grid(row=5, column=0, sticky="w",
+                 text="Lưu ý: Ứng dụng BẮT BUỘC đưa ACSOFT lên foreground (phải focus). Nhấn phím ESC để hủy quá trình chạy.").grid(row=5, column=0, sticky="w",
                                                                                     pady=(5, 0))
 
         # SỬA: Áp dụng trạng thái ẩn/hiện ban đầu
         # --- KẾT THÚC SỬA ---
         self._toggle_realtime_status()
 
-        # -------------------------- Real-time Status Update --------------------------
+    # -------------------------- UI Helpers (Theme, Status, etc.) --------------------------
+
+    def toggle_dark_mode(self):
+        """Chuyển đổi giữa theme sáng và tối."""
+        is_dark = self.dark_mode_var.get()
+        theme_name = "equilux" if is_dark else "arc"
+        self.set_theme(theme_name)
+        
+        # Cập nhật màu sắc các thành phần tùy chỉnh
+        if is_dark:
+            # Màu cho chế độ tối
+            bg_color = "#464646"
+            fg_color = "white"
+            special_fg_color = "#a9b7c6" # Màu xám nhạt cho chữ phụ
+        else:
+            # Màu cho chế độ sáng
+            bg_color = "#f0f0f0" # Màu nền mặc định của Windows
+            fg_color = "black"
+            special_fg_color = "gray" # Màu xám cho chữ phụ
+            
+        # SỬA: Áp dụng màu nền cho cửa sổ chính
+        self.config(background=bg_color)
+        
+        # Cập nhật màu cho các label có màu tùy chỉnh
+        for widget in self.winfo_children():
+            self._update_widget_colors(widget, bg_color, fg_color, special_fg_color)
+
+    def _update_widget_colors(self, parent_widget, bg, fg, special_fg):
+        """Đệ quy cập nhật màu cho các widget con."""
+        for child in parent_widget.winfo_children():
+            try:
+                # SỬA: Áp dụng màu cho các widget tk thông thường
+                widget_class = child.winfo_class()
+                if widget_class in ['Label', 'TFrame', 'Frame']: # Áp dụng cho Label và Frame
+                    child.config(background=bg)
+                    # Chỉ đổi màu chữ cho Label, không đổi cho Frame
+                    if widget_class == 'Label':
+                        # Nếu là label đặc biệt (status, italic) thì dùng màu chữ phụ
+                        if child == self.lbl_realtime_status or "italic" in str(child.cget("font")):
+                            child.config(fg=special_fg)
+                        else:
+                            child.config(fg=fg)
+                            
+            except tk.TclError:
+                # Bỏ qua các widget không có thuộc tính 'font' (ví dụ: Frame, Scrollbar)
+                pass
+            # Tiếp tục đệ quy cho các widget con
+            self._update_widget_colors(child, bg, fg, special_fg)
 
     def _toggle_realtime_status(self):
         """Toggle the visibility of the real-time status frame."""
@@ -1678,6 +1736,7 @@ class MacroApp(ThemedTk):
             "custom_speed_ms": self.spin_speed_val.get(),
             "delay_between_rows_s": self.spin_between_val.get(),
             "show_realtime_status": self.show_realtime_status.get(),
+            "dark_mode": self.dark_mode_var.get(), # SỬA: Lưu trạng thái dark mode
         }
 
     def _apply_app_settings(self, settings):
@@ -1696,8 +1755,12 @@ class MacroApp(ThemedTk):
             self.spin_speed_val.set(settings.get("custom_speed_ms", 500))
             self.spin_between_val.set(settings.get("delay_between_rows_s", 2))
 
-            self.show_realtime_status.set(settings.get("show_realtime_status", True))
+            self.show_realtime_status.set(settings.get("show_realtime_status", False))
             self._toggle_realtime_status()
+
+            # SỬA: Tải và áp dụng trạng thái dark mode
+            self.dark_mode_var.set(settings.get("dark_mode", True)) # SỬA: Mặc định là True khi tải
+            self.toggle_dark_mode()
 
             csv_path = settings.get("csv_path")
             if csv_path and os.path.exists(csv_path):
