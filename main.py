@@ -526,8 +526,8 @@ class MacroApp(ThemedTk):
         self.style.map("Highlight.Treeview", background=[("selected", "#FFA07A"), ("active", "#e1e1e1")]) # This style is not used in the provided code
         
         # SỬA: Cấu hình font cho các widget ttk chung
-        self.style.configure('Accent.TButton', font=('TkDefaultFont', 9, 'bold'))
-        self.style.configure('TLabelframe.Label', font=('TkDefaultFont', 9, 'bold')) # Tiêu đề LabelFrame
+        self.style.configure('Accent.TButton', font=('Courier', 9, 'bold'))
+        self.style.configure('TLabelframe.Label', font=('Courier', 9, 'bold')) # Tiêu đề LabelFrame
 
         self.setup_ui()
         self.protocol("WM_DELETE_WINDOW", self.on_app_close)
@@ -665,7 +665,7 @@ class MacroApp(ThemedTk):
             logo_label.bind("<Button-1>", self._on_title_bar_press)
             logo_label.bind("<B1-Motion>", self._on_title_bar_drag)
 
-        title_label = ttk.Label(header_frame, text="Việt Tín Auto Sender V2025.04", font=('TkDefaultFont', 10, 'bold'))
+        title_label = ttk.Label(header_frame, text="Việt Tín Auto Sender V2025.04", font=('Courier', 10, 'bold'))
         title_label.grid(row=0, column=1, sticky='w', padx=10)
         title_label.bind("<Button-1>", self._on_title_bar_press)
         title_label.bind("<B1-Motion>", self._on_title_bar_drag)
@@ -679,11 +679,11 @@ class MacroApp(ThemedTk):
         window_controls_frame = tk.Frame(header_frame)
         window_controls_frame.grid(row=0, column=3, sticky='e')
         
-        self.minimize_btn = ttk.Label(window_controls_frame, text=" _ ", font=('TkDefaultFont', 10, 'bold'))
+        self.minimize_btn = ttk.Label(window_controls_frame, text=" _ ", font=('Courier', 10, 'bold'))
         self.minimize_btn.pack(side="left")
         self.minimize_btn.bind("<Button-1>", lambda e: self.minimize_window())
         
-        close_btn = ttk.Label(window_controls_frame, text=" X ", font=('TkDefaultFont', 10, 'bold'))
+        close_btn = ttk.Label(window_controls_frame, text=" X ", font=('Courier', 10, 'bold'))
         close_btn.pack(side="left", padx=(0, 5))
         close_btn.bind("<Button-1>", lambda e: self.on_app_close())
 
@@ -759,13 +759,19 @@ class MacroApp(ThemedTk):
         g4l_speed = ttk.Frame(g4)
         g4l_speed.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         self.speed_mode = tk.IntVar(value=1)
+        
+        default_font = ('Courier', 9)
+        
         ttk.Radiobutton(g4l_speed, text="Tốc độ đã ghi", variable=self.speed_mode, value=1).pack(side="left", padx=5)
         self.rb_custom = ttk.Radiobutton(g4l_speed, text="Tốc độ cố định:", variable=self.speed_mode, value=2)
         self.rb_custom.pack(side="left", padx=10)
 
-        self.spin_speed = ttk.Spinbox(g4l_speed, from_=100, to=10000, increment=100, textvariable=self.spin_speed_val,
-                                      width=5)
+        # SỬA: Thay thế Spinbox bằng Entry (textbox)
+        self.spin_speed = ttk.Entry(g4l_speed, textvariable=self.spin_speed_val, width=5)
         self.spin_speed.pack(side="left", padx=5)
+        
+        self.style.configure('TRadiobutton', font=default_font)
+        self.style.configure('TCheckbutton', font=default_font)
         ttk.Label(g4l_speed, text="ms").pack(side="left")
         self.speed_mode.trace_add('write', lambda *args: self.spin_speed.config(
             state='normal' if self.speed_mode.get() == 2 else 'disabled'))
@@ -774,7 +780,8 @@ class MacroApp(ThemedTk):
         g4l_delay = ttk.Frame(g4)
         g4l_delay.grid(row=1, column=0, sticky="ew", padx=5, pady=(0, 5))
         ttk.Label(g4l_delay, text="Đợi giữa 2 dòng (1-20 giây):").pack(side="left")
-        self.spin_between = ttk.Spinbox(g4l_delay, from_=1, to=20, textvariable=self.spin_between_val, width=5)
+        # SỬA: Thay thế Spinbox bằng Entry (textbox)
+        self.spin_between = ttk.Entry(g4l_delay, textvariable=self.spin_between_val, width=5)
         self.spin_between.pack(side="left", padx=5)
 
 
@@ -853,7 +860,7 @@ class MacroApp(ThemedTk):
         )
 
         # G3: Hàng 4 - Ghi chú cho Record
-        ttk.Label(g3, text="Ghi: Insert->cột | Phím/Chuột->thao tác | ESC->kết thúc", font=('TkDefaultFont', 9, 'italic'), foreground="gray").grid(row=4, column=0, sticky="w", padx=5, pady=(5, 5))
+        ttk.Label(g3, text="Ghi: Insert->cột | Phím/Chuột->thao tác | ESC->kết thúc", font=('Courier', 9, 'italic'), foreground="gray").grid(row=4, column=0, sticky="w", padx=5, pady=(5, 5))
         # ====================================================================
 
         # RUN BUTTONS
@@ -862,7 +869,7 @@ class MacroApp(ThemedTk):
         
         self.g5 = g5
 
-        ttk.Label(g5, text="Chọn Chế độ Chạy:", font=('TkDefaultFont', 9, 'bold')).pack(side="left", padx=(0, 10))
+        ttk.Label(g5, text="Chọn Chế độ Chạy:", font=('Courier', 9, 'bold')).pack(side="left", padx=(0, 10))
 
         self.btn_test = ttk.Button(g5, text="►CHẠY THỬ (1 DÒNG)", command=self.on_test, style='Success.TButton')
         self.btn_test.pack(side="left", padx=10)
@@ -873,7 +880,7 @@ class MacroApp(ThemedTk):
         self.btn_stop = ttk.Button(g5, text="STOP (ESC)", command=self.cancel_run, state='disabled', style='Danger.TButton')
         self.btn_stop.pack(side="left", padx=10)
 
-        self.lbl_status = ttk.Label(g5, text="Chờ...", foreground="#1e90ff", font=('TkDefaultFont', 10, 'bold'))
+        self.lbl_status = ttk.Label(g5, text="Chờ...", foreground="#1e90ff", font=('Courier', 10, 'bold'))
         self.lbl_status.pack(side="left", padx=(20, 0))
 
         # ------------------------ REAL-TIME STATUS FRAME ------------------------
@@ -914,7 +921,7 @@ class MacroApp(ThemedTk):
         Đây là một kỹ thuật nâng cao để ghi đè hoàn toàn màu nền của TButton,
         vốn bị các theme mặc định trên Windows kiểm soát chặt chẽ.
         """
-        bold_font = ('TkDefaultFont', 9, 'bold')
+        bold_font = ('Courier', 9, 'bold')
 
         # --- Style cho nút XANH (Success) ---
         self.style.layout('Success.TButton', [
@@ -942,22 +949,49 @@ class MacroApp(ThemedTk):
         self.style.map('Danger.TButton',
                        background=[('active', '#c82333'), ('!disabled', '#dc3545')])
 
+    def _setup_consistent_widget_styles(self):
+        """
+        SỬA: Định nghĩa style cho Spinbox và Combobox để giữ giao diện nhất quán
+        khi chuyển đổi theme, tránh lỗi "phình" mũi tên.
+        """
+        # Giữ cho kích thước mũi tên của Spinbox không đổi
+        self.style.configure('TSpinbox', arrowsize=10)
+
+        # Tương tự, có thể áp dụng cho Combobox nếu cần
+        # self.style.configure('TCombobox', arrowsize=10)
+
+        # Đảm bảo phần nội dung của Combobox có màu nền phù hợp với theme
+        self.style.map('TCombobox', fieldbackground=[('readonly', self.get_current_colors()[0])])
+
+        # SỬA: Đã thay thế Spinbox bằng Entry, không cần style tùy chỉnh 'NoArrows.TSpinbox' nữa.
+
     def _reapply_default_font_styles(self):
         """
         SỬA: Áp dụng lại các style font mặc định cho các widget ttk.
         Hàm này được gọi sau khi thay đổi theme để đảm bảo font không bị ghi đè.
         """
-        default_font = ('TkDefaultFont', 9)
-        bold_font = ('TkDefaultFont', 9, 'bold')
+        default_font = ('Courier', 9)
+        bold_font = ('Courier', 9, 'bold')
 
         self.style.configure('TButton', font=default_font)
-        self.style.configure('DarkMode.TButton', font=('TkDefaultFont', 12))
+        self.style.configure('DarkMode.TButton', font=('Courier', 12))
         self.style.configure('Accent.TButton', font=bold_font)
         self.style.configure('TLabelframe.Label', font=bold_font)
         self.style.configure('TLabel', font=default_font)
+        # SỬA: Thêm cấu hình font cho tiêu đề của Treeview (bảng CSV và Macro)
+        self.style.configure('Treeview.Heading', font=bold_font)
+        # SỬA: Thêm cấu hình font cho Radiobutton và Checkbutton ở đây
+        # để đảm bảo nó được áp dụng lại mỗi khi đổi theme.
+        self.style.configure('TRadiobutton', font=default_font)
+        self.style.configure('TCheckbutton', font=default_font)
+
         self.tree_macro.tag_configure('highlight', background='#FFA07A', font=bold_font)
 
         self._setup_colored_button_styles()
+        # SỬA: Gọi hàm để áp dụng style nhất quán cho Spinbox/Combobox
+        self._setup_consistent_widget_styles()
+        # SỬA: Đã thay thế Spinbox bằng Entry, không cần áp dụng lại style 'NoArrows.TSpinbox' nữa.
+
     # -------------------------- UI Helpers (Theme, Status, etc.) --------------------------    
     def get_current_colors(self):
         """Trả về bộ màu (bg, fg, special_fg) cho theme hiện tại."""
@@ -1555,7 +1589,7 @@ class MacroApp(ThemedTk):
                             style='Macro.Treeview')
 
         # Thẻ để highlight dòng đang chạy
-        tree.tag_configure('highlight', background='#FFA07A', font=('TkDefaultFont', 9, 'bold'))
+        tree.tag_configure('highlight', background='#FFA07A', font=('Courier', 9, 'bold'))
 
         tree.heading("#0", text="STT", anchor='center')
         tree.column("#0", width=50, stretch=tk.NO, anchor='center')
