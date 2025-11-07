@@ -41,6 +41,7 @@ except ImportError:
     exit()
 
 # Cần cài đặt: pip install pywin32
+from tkinter import font as tkFont
 try:
     import win32gui
     import win32con
@@ -360,12 +361,12 @@ class RecordingHUD(tk.Toplevel):
         # Tạo style cho các widget trong HUD
         style = ttk.Style(self)
         style.configure("HUD.TFrame", background="#282c34")
-        style.configure("HUD.TLabel", background="#282c34", foreground="white", font=("Arial", 10))
-        style.configure("HUD.TButton", font=("Arial", 9, "bold"), foreground="white")
+        style.configure("HUD.TLabel", background="#282c34", foreground="white", font=("Courier", 10))
+        style.configure("HUD.TButton", font=("Courier", 9, "bold"), foreground="white")
         style.map("HUD.TButton",
                   background=[('active', '#e06c75'), ('!active', '#d15660')],
                   foreground=[('active', 'white')])
-        style.configure("Pause.TButton", font=("Arial", 9, "bold"))
+        style.configure("Pause.TButton", font=("Courier", 9, "bold"))
         style.map("Pause.TButton",
                   background=[('active', '#61afef'), ('!active', '#5699d6')],
                   foreground=[('active', 'white')])
@@ -435,7 +436,7 @@ class RecordingHUD(tk.Toplevel):
 # ------------------------------ Tkinter App (Themed) ---------------------
 # =========================================================================
 
-LOGO_PNG_BASE64 = b"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"  # Placeholder
+LOGO_PNG_BASE64 = b"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"  # Placeholder
 
 is_collapsed = True
 class MacroApp(ThemedTk):
@@ -454,7 +455,12 @@ class MacroApp(ThemedTk):
         self.is_collapsed = False
         self.normal_geometry = ""
 
-        self.option_add("*font", "Arial 9") # SỬA: Tải logo từ chuỗi Base64
+        # Determine the font family
+        self.preferred_font_family = "Courier"
+        if self.preferred_font_family not in tkFont.families():
+            self.preferred_font_family = "Courier"
+
+        self.option_add("*font", (self.preferred_font_family, 9)) # SỬA: Tải logo từ chuỗi Base64
         original_image = None
         try:
             logo_data = base64.b64decode(LOGO_PNG_BASE64)
@@ -483,7 +489,7 @@ class MacroApp(ThemedTk):
         # self.title("...") # Không cần title nữa
         self._offset_x = 0 # Biến cho việc kéo thả cửa sổ
         self._offset_y = 0 # Biến cho việc kéo thả cửa sổ
-        self.geometry("1000x800")
+        self.geometry("1200x800")
         
         # SỬA: Tạm thời ẩn cửa sổ để áp dụng style một cách an toàn
         self.withdraw()
@@ -521,13 +527,27 @@ class MacroApp(ThemedTk):
         self.hud_window = None
         self.realtime_status_frame = None
 
-        self.setup_ui()
-
+        # SỬA: Khởi tạo self.style TRƯỚC khi gọi setup_ui() để tránh lỗi AttributeError
         self.style = ttk.Style()
         self.style.map("Macro.Treeview", background=[("selected", "#1e90ff"), ("active", "#e1e1e1")])
-        self.style.configure("Macro.Treeview", background="#FFFFFF", fieldbackground="#FFFFFF", font=("Arial", 9))
-        self.style.map("Highlight.Treeview", background=[("selected", "#FFA07A"), ("active", "#e1e1e1")])
-        self.style.configure('Accent.TButton', font=('Arial', 9, 'bold'))
+        self.style.configure("Macro.Treeview", background="#FFFFFF", fieldbackground="#FFFFFF", font=("Courier", 9))
+
+        # SỬA: Áp dụng font cho Macro.Treeview
+        self.style.configure("Macro.Treeview", background="#FFFFFF", fieldbackground="#FFFFFF", font=(self.preferred_font_family, 9))
+        self.style.map("Highlight.Treeview", background=[("selected", "#FFA07A"), ("active", "#e1e1e1")]) # This style is not used in the provided code
+        
+        # SỬA: Cấu hình font cho các widget ttk chung
+        self.style.configure('TButton', font=(self.preferred_font_family, 9))
+        self.style.configure('Accent.TButton', font=(self.preferred_font_family, 9, 'bold'))
+        self.style.configure('TLabelframe.Label', font=(self.preferred_font_family, 9, 'bold')) # Tiêu đề LabelFrame
+        self.style.configure('TEntry', font=(self.preferred_font_family, 9))
+        self.style.configure('TCombobox', font=(self.preferred_font_family, 9))
+        self.style.configure('TSpinbox', font=(self.preferred_font_family, 9))
+        self.style.configure('TRadiobutton', font=(self.preferred_font_family, 9))
+        self.style.configure('TCheckbutton', font=(self.preferred_font_family, 9))
+        self.style.configure('TLabel', font=(self.preferred_font_family, 9)) # Cho ttk.Label
+
+        self.setup_ui() # Call setup_ui after preferred_font_family is set
 
         self.protocol("WM_DELETE_WINDOW", self.on_app_close)
         # self.resizable(False, False) # SỬA: Xóa bỏ dòng này để tránh xung đột
@@ -535,6 +555,9 @@ class MacroApp(ThemedTk):
 
         # BẮT ĐẦU VÒNG LẶP CẬP NHẬT TRẠNG THÁI REAL-TIME
         self._update_status_bar_info()
+
+        # SỬA: Áp dụng font cho tất cả các widget hiện có và widget được tạo sau
+        self._apply_font_recursively(self)
 
         # SỬA: Áp dụng theme ban đầu.
         # Vì toggle_dark_mode() sẽ đảo ngược trạng thái, chúng ta cần đặt giá trị ban đầu
@@ -664,26 +687,26 @@ class MacroApp(ThemedTk):
             logo_label.bind("<Button-1>", self._on_title_bar_press)
             logo_label.bind("<B1-Motion>", self._on_title_bar_drag)
 
-        title_label = tk.Label(header_frame, text="Việt Tín Auto Sender V2025.04", font=("Arial", 10, "bold"))
+        title_label = tk.Label(header_frame, text="Việt Tín Auto Sender V2025.04", font=(self.preferred_font_family, 10, "bold"))
         title_label.grid(row=0, column=1, sticky='w', padx=10)
         title_label.bind("<Button-1>", self._on_title_bar_press)
         title_label.bind("<B1-Motion>", self._on_title_bar_drag)
 
         # SỬA: Thay Checkbutton bằng Button để chuyển chế độ tối
-        initial_dark_mode_text = "◐" if self.dark_mode_var.get() else "☀"
-        self.dark_mode_btn = ttk.Button(header_frame, text=initial_dark_mode_text,
-                                        command=self.toggle_dark_mode, width=5)
+        initial_dark_mode_text = "☀" # Sẽ được cập nhật ngay khi toggle_dark_mode được gọi
+        self.dark_mode_btn = ttk.Button(header_frame, text=initial_dark_mode_text, command=self.toggle_dark_mode,
+                                        width=3, style='DarkMode.TButton')
         self.dark_mode_btn.grid(row=0, column=2, sticky='e', padx=5)
 
         # SỬA: Frame chứa các nút điều khiển cửa sổ
         window_controls_frame = tk.Frame(header_frame)
         window_controls_frame.grid(row=0, column=3, sticky='e')
-
-        self.minimize_btn = tk.Label(window_controls_frame, text=" _ ", font=("Arial", 10, "bold"))
+        
+        self.minimize_btn = tk.Label(window_controls_frame, text=" _ ", font=(self.preferred_font_family, 10, "bold"))
         self.minimize_btn.pack(side="left")
         self.minimize_btn.bind("<Button-1>", lambda e: self.minimize_window())
-
-        close_btn = tk.Label(window_controls_frame, text=" X ", font=("Arial", 10, "bold"))
+        
+        close_btn = tk.Label(window_controls_frame, text=" X ", font=(self.preferred_font_family, 10, "bold"))
         close_btn.pack(side="left", padx=(0, 5))
         close_btn.bind("<Button-1>", lambda e: self.on_app_close())
 
@@ -853,16 +876,16 @@ class MacroApp(ThemedTk):
         )
 
         # G3: Hàng 4 - Ghi chú cho Record
-        tk.Label(g3, text="Ghi: Insert->cột | Phím/Chuột->thao tác | ESC->kết thúc",
-                 font=("Arial", 9, "italic"), fg="gray").grid(row=4, column=0, sticky="w", padx=5, pady=(5, 5))
+        tk.Label(g3, text="Ghi: Insert->cột | Phím/Chuột->thao tác | ESC->kết thúc", font=(self.preferred_font_family, 9, "italic"), fg="gray").grid(row=4, column=0, sticky="w", padx=5, pady=(5, 5))
         # ====================================================================
 
         # RUN BUTTONS
         g5 = ttk.Frame(main_frame)
         g5.grid(row=3, column=0, sticky="ew", pady=(5, 0))
+        
         self.g5 = g5
 
-        tk.Label(g5, text="Chọn Chế độ Chạy:", font=("Arial", 9, "bold")).pack(side="left", padx=(0, 10))
+        tk.Label(g5, text="Chọn Chế độ Chạy:", font=("Courier", 9, "bold")).pack(side="left", padx=(0, 10))
 
         self.btn_test = ttk.Button(g5, text="▶️ CHẠY THỬ (1 DÒNG)", command=self.on_test, style='Accent.TButton')
         self.btn_test.pack(side="left", padx=10)
@@ -873,7 +896,7 @@ class MacroApp(ThemedTk):
         self.btn_stop = ttk.Button(g5, text="STOP (ESC)", command=self.on_cancel, state='disabled')
         self.btn_stop.pack(side="left", padx=10)
 
-        self.lbl_status = tk.Label(g5, text="Chờ...", fg="#1e90ff", font=("Arial", 10, "bold"))
+        self.lbl_status = tk.Label(g5, text="Chờ...", fg="#1e90ff", font=(self.preferred_font_family, 10, "bold"))
         self.lbl_status.pack(side="left", padx=(20, 0))
 
         # ------------------------ REAL-TIME STATUS FRAME ------------------------
@@ -908,6 +931,21 @@ class MacroApp(ThemedTk):
         # --- KẾT THÚC SỬA ---
         self._toggle_realtime_status()
 
+    def _apply_font_recursively(self, parent):
+        """
+        Áp dụng font chữ cho tất cả các widget con của một widget cha.
+        """
+        for child in parent.winfo_children():
+            try:
+                child.config(font=(self.preferred_font_family, 9))
+            except tk.TclError:
+                # Widget này không hỗ trợ cấu hình font
+                pass
+
+            # Gọi đệ quy cho các widget con của widget này
+            self._apply_font_recursively(child)
+
+
     # -------------------------- UI Helpers (Theme, Status, etc.) --------------------------    
     def get_current_colors(self):
         """Trả về bộ màu (bg, fg, special_fg) cho theme hiện tại."""
@@ -929,16 +967,24 @@ class MacroApp(ThemedTk):
 
         bg_color, fg_color, special_fg_color = self.get_current_colors()
 
+        # --- SỬA: CẤU HÌNH LẠI STYLE CHO NÚT DARK MODE SAU KHI ĐỔI THEME ---
+        # Việc này đảm bảo font tùy chỉnh không bị theme mới ghi đè.
+        self.style.configure('DarkMode.TButton', font=('Courier', 12))
+        self.style.configure('DarkMode.TButton', font=(self.preferred_font_family, 12))
         # SỬA: Cập nhật ký tự trên nút
         new_text = "◐" if is_dark else "☀"
         if self.dark_mode_btn:
             self.dark_mode_btn.config(text=new_text)
+
         # SỬA: Áp dụng màu nền cho cửa sổ chính
         self.config(background=bg_color)
 
         # Cập nhật màu cho các label có màu tùy chỉnh
         for widget in self.winfo_children():
             self._update_widget_colors(widget, bg_color, fg_color, special_fg_color)
+
+        # SỬA: Gọi lại hàm áp dụng font đệ quy sau khi đổi theme
+        self._apply_font_recursively(self)
 
     def _update_widget_colors(self, parent_widget, bg, fg, special_fg):
         """Đệ quy cập nhật màu cho các widget con."""
@@ -947,15 +993,15 @@ class MacroApp(ThemedTk):
                 # SỬA: Áp dụng màu cho các widget tk thông thường
                 widget_class = child.winfo_class()
                 # Bỏ qua các nút ttk vì chúng đã có style riêng
-                if widget_class in ['Label', 'TFrame', 'Frame'] and not isinstance(child, ttk.Checkbutton):
-                    child.config(background=bg)
-                    # Chỉ đổi màu chữ cho Label, không đổi cho Frame
-                    if widget_class == 'Label':
-                        # Nếu là label đặc biệt (status, italic) thì dùng màu chữ phụ
-                        if child == self.lbl_realtime_status or "italic" in str(child.cget("font")):
-                            child.config(fg=special_fg)
-                        else:
-                            child.config(fg=fg)
+                #if widget_class in ['Label', 'TFrame', 'Frame'] and not isinstance(child, ttk.Checkbutton):
+                child.config(background=bg)
+                # Chỉ đổi màu chữ cho Label, không đổi cho Frame
+                if widget_class == 'Label':
+                    # Nếu là label đặc biệt (status, italic) thì dùng màu chữ phụ
+                    if child == self.lbl_realtime_status or "italic" in str(child.cget("font")):
+                        child.config(fg=special_fg)
+                    else:
+                        child.config(fg=fg)
 
             except tk.TclError:
                 # Bỏ qua các widget không có thuộc tính 'font' (ví dụ: Frame, Scrollbar)
@@ -1500,7 +1546,7 @@ class MacroApp(ThemedTk):
                             style='Macro.Treeview')
 
         # Thẻ để highlight dòng đang chạy
-        tree.tag_configure('highlight', background='#FFA07A', font=('Arial', 9, 'bold'))
+        tree.tag_configure('highlight', background='#FFA07A', font=(self.preferred_font_family, 9, 'bold'))
 
         tree.heading("#0", text="STT", anchor='center')
         tree.column("#0", width=50, stretch=tk.NO, anchor='center')
