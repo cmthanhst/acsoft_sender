@@ -162,3 +162,20 @@ RecordingHUD QPushButton[text="■ STOP"]:hover {
 #recordButton:hover, #stopButton:hover {
     background-color: #c82333; /* Darker Red */
 }
+
+/* SỬA: Tùy chỉnh giao diện cho RadioButton */
+
+/* Vòng tròn mặc định (chưa check) */
+QRadioButton::indicator {
+    border: 2px solid #a9b7c6; /* Viền màu xám sáng */
+    border-radius: 9px;        /* Bo tròn để tạo hình tròn (18/2) */
+    width: 14px;               /* Chiều rộng của vòng tròn */
+    height: 14px;              /* Chiều cao của vòng tròn */
+    background: transparent;   /* Nền trong suốt */
+}
+
+/* Vòng tròn khi được check */
+QRadioButton::indicator:checked {
+    background-color: #28a745; /* Màu xanh lá cho chấm tròn bên trong */
+    border: 2px solid #a9b7c6; /* Giữ nguyên màu viền */
+}
