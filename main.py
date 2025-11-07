@@ -660,31 +660,30 @@ class MacroApp(ThemedTk):
         header_frame.grid_columnconfigure(1, weight=1) # Cột chứa tiêu đề sẽ co giãn
 
         if self.header_logo:
-            logo_label = tk.Label(header_frame, image=self.header_logo)
+            logo_label = ttk.Label(header_frame, image=self.header_logo)
             logo_label.grid(row=0, column=0, sticky='w', padx=5, pady=5)
             logo_label.bind("<Button-1>", self._on_title_bar_press)
             logo_label.bind("<B1-Motion>", self._on_title_bar_drag)
 
-        title_label = tk.Label(header_frame, text="Việt Tín Auto Sender V2025.04", font=('TkDefaultFont', 10, 'bold'))
+        title_label = ttk.Label(header_frame, text="Việt Tín Auto Sender V2025.04", font=('TkDefaultFont', 10, 'bold'))
         title_label.grid(row=0, column=1, sticky='w', padx=10)
         title_label.bind("<Button-1>", self._on_title_bar_press)
         title_label.bind("<B1-Motion>", self._on_title_bar_drag)
 
         # SỬA: Thay Checkbutton bằng Button để chuyển chế độ tối
         initial_dark_mode_text = "☀" # Sẽ được cập nhật ngay khi toggle_dark_mode được gọi
-        self.dark_mode_btn = ttk.Button(header_frame, text=initial_dark_mode_text, command=self.toggle_dark_mode,
-                                        width=3, style='DarkMode.TButton')
+        self.dark_mode_btn = ttk.Button(header_frame, text=initial_dark_mode_text, command=self.toggle_dark_mode, width=3)
         self.dark_mode_btn.grid(row=0, column=2, sticky='e', padx=5)
 
         # SỬA: Frame chứa các nút điều khiển cửa sổ
         window_controls_frame = tk.Frame(header_frame)
         window_controls_frame.grid(row=0, column=3, sticky='e')
         
-        self.minimize_btn = tk.Label(window_controls_frame, text=" _ ", font=('TkDefaultFont', 10, 'bold'))
+        self.minimize_btn = ttk.Label(window_controls_frame, text=" _ ", font=('TkDefaultFont', 10, 'bold'))
         self.minimize_btn.pack(side="left")
         self.minimize_btn.bind("<Button-1>", lambda e: self.minimize_window())
         
-        close_btn = tk.Label(window_controls_frame, text=" X ", font=('TkDefaultFont', 10, 'bold'))
+        close_btn = ttk.Label(window_controls_frame, text=" X ", font=('TkDefaultFont', 10, 'bold'))
         close_btn.pack(side="left", padx=(0, 5))
         close_btn.bind("<Button-1>", lambda e: self.on_app_close())
 
@@ -722,7 +721,7 @@ class MacroApp(ThemedTk):
 
         g2l_csv = ttk.Frame(g2)
         g2l_csv.grid(row=0, column=0, sticky="ew", padx=5, pady=(5, 0))
-        tk.Label(g2l_csv, text="File CSV:", width=8, anchor="w").pack(side="left")
+        ttk.Label(g2l_csv, text="File CSV:", width=8, anchor="w").pack(side="left")
         self.txt_csv = ttk.Entry(g2l_csv, width=10)
         self.txt_csv.pack(side="left", fill="x", expand=True, padx=(0, 5))
         ttk.Button(g2l_csv, text="Browse CSV", command=self.browse_csv).pack(side="left")
@@ -735,14 +734,14 @@ class MacroApp(ThemedTk):
         g2l_window.grid_columnconfigure(3, weight=1)
 
         # Cột 0: Label "Delimiter"
-        tk.Label(g2l_window, text="Delimiter:", width=8, anchor="w").grid(row=0, column=0, sticky="w")
+        ttk.Label(g2l_window, text="Delimiter:", width=8, anchor="w").grid(row=0, column=0, sticky="w")
         # Cột 1: Ô nhập Delimiter
         self.txt_delimiter = ttk.Entry(g2l_window, width=3)
         self.txt_delimiter.insert(0, ";")
         self.txt_delimiter.grid(row=0, column=1, sticky="w", padx=(0, 10))
 
         # Cột 2: Label "Cửa sổ"
-        tk.Label(g2l_window, text="Cửa sổ:", width=6, anchor="w").grid(row=0, column=2, sticky="w")
+        ttk.Label(g2l_window, text="Cửa sổ:", width=6, anchor="w").grid(row=0, column=2, sticky="w")
         # Cột 3: Combobox (co giãn)
         self.combo_windows = ttk.Combobox(g2l_window, state="readonly", width=30)
         self.combo_windows.grid(row=0, column=3, sticky="ew", padx=(0, 5))
@@ -767,14 +766,14 @@ class MacroApp(ThemedTk):
         self.spin_speed = ttk.Spinbox(g4l_speed, from_=100, to=10000, increment=100, textvariable=self.spin_speed_val,
                                       width=5)
         self.spin_speed.pack(side="left", padx=5)
-        tk.Label(g4l_speed, text="ms").pack(side="left")
+        ttk.Label(g4l_speed, text="ms").pack(side="left")
         self.speed_mode.trace_add('write', lambda *args: self.spin_speed.config(
             state='normal' if self.speed_mode.get() == 2 else 'disabled'))
         self.spin_speed.config(state='disabled')
 
         g4l_delay = ttk.Frame(g4)
         g4l_delay.grid(row=1, column=0, sticky="ew", padx=5, pady=(0, 5))
-        tk.Label(g4l_delay, text="Đợi giữa 2 dòng (1-20 giây):").pack(side="left")
+        ttk.Label(g4l_delay, text="Đợi giữa 2 dòng (1-20 giây):").pack(side="left")
         self.spin_between = ttk.Spinbox(g4l_delay, from_=1, to=20, textvariable=self.spin_between_val, width=5)
         self.spin_between.pack(side="left", padx=5)
 
@@ -854,7 +853,7 @@ class MacroApp(ThemedTk):
         )
 
         # G3: Hàng 4 - Ghi chú cho Record
-        tk.Label(g3, text="Ghi: Insert->cột | Phím/Chuột->thao tác | ESC->kết thúc", font=('TkDefaultFont', 9, 'italic'), fg="gray").grid(row=4, column=0, sticky="w", padx=5, pady=(5, 5))
+        ttk.Label(g3, text="Ghi: Insert->cột | Phím/Chuột->thao tác | ESC->kết thúc", font=('TkDefaultFont', 9, 'italic'), foreground="gray").grid(row=4, column=0, sticky="w", padx=5, pady=(5, 5))
         # ====================================================================
 
         # RUN BUTTONS
@@ -863,7 +862,7 @@ class MacroApp(ThemedTk):
         
         self.g5 = g5
 
-        tk.Label(g5, text="Chọn Chế độ Chạy:", font=('TkDefaultFont', 9, 'bold')).pack(side="left", padx=(0, 10))
+        ttk.Label(g5, text="Chọn Chế độ Chạy:", font=('TkDefaultFont', 9, 'bold')).pack(side="left", padx=(0, 10))
 
         self.btn_test = ttk.Button(g5, text="►CHẠY THỬ (1 DÒNG)", command=self.on_test, style='Accent.TButton')
         self.btn_test.pack(side="left", padx=10)
@@ -874,7 +873,7 @@ class MacroApp(ThemedTk):
         self.btn_stop = ttk.Button(g5, text="STOP (ESC)", command=self.on_cancel, state='disabled')
         self.btn_stop.pack(side="left", padx=10)
 
-        self.lbl_status = tk.Label(g5, text="Chờ...", fg="#1e90ff", font=('TkDefaultFont', 10, 'bold'))
+        self.lbl_status = ttk.Label(g5, text="Chờ...", foreground="#1e90ff", font=('TkDefaultFont', 10, 'bold'))
         self.lbl_status.pack(side="left", padx=(20, 0))
 
         # ------------------------ REAL-TIME STATUS FRAME ------------------------
@@ -890,7 +889,7 @@ class MacroApp(ThemedTk):
         status_controls.grid_columnconfigure(0, weight=1)
 
         # Label hiển thị thông tin, đặt ở cột 0
-        self.lbl_realtime_status = tk.Label(status_controls, text="...", justify="left", anchor="w")
+        self.lbl_realtime_status = ttk.Label(status_controls, text="...", justify="left", anchor="w")
         self.lbl_realtime_status.grid(row=0, column=0, sticky="ew")
         # Gán sự kiện để cập nhật wraplength khi kích thước label thay đổi
         self.lbl_realtime_status.bind('<Configure>',
@@ -901,7 +900,7 @@ class MacroApp(ThemedTk):
                         command=self._toggle_realtime_status).grid(row=0, column=1, sticky="e", padx=(10, 0))
 
         # Disclaimer (now row 5)
-        tk.Label(main_frame,
+        ttk.Label(main_frame,
                  text="Lưu ý: Ứng dụng BẮT BUỘC đưa ACSOFT lên foreground (phải focus). Nhấn phím ESC để hủy quá trình chạy.").grid(row=5, column=0, sticky="w",
                                                                                     pady=(5, 0))
 
@@ -918,6 +917,7 @@ class MacroApp(ThemedTk):
         bold_font = ('TkDefaultFont', 9, 'bold')
 
         self.style.configure('TButton', font=default_font)
+        self.style.configure('DarkMode.TButton', font=('TkDefaultFont', 12))
         self.style.configure('Accent.TButton', font=bold_font)
         self.style.configure('TLabelframe.Label', font=bold_font)
         self.style.configure('TLabel', font=default_font)
@@ -945,8 +945,6 @@ class MacroApp(ThemedTk):
 
         # --- SỬA: CẤU HÌNH LẠI STYLE CHO NÚT DARK MODE SAU KHI ĐỔI THEME ---
         # Việc này đảm bảo font tùy chỉnh không bị theme mới ghi đè.
-        self.style.configure('DarkMode.TButton', font=('TkDefaultFont', 12))
-        # SỬA: Cập nhật ký tự trên nút
         new_text = "◐" if is_dark else "☀"
         if self.dark_mode_btn:
             self.dark_mode_btn.config(text=new_text)
@@ -966,17 +964,16 @@ class MacroApp(ThemedTk):
         for child in parent_widget.winfo_children():
             try:
                 # SỬA: Áp dụng màu cho các widget tk thông thường
-                widget_class = child.winfo_class()
-                # Bỏ qua các nút ttk vì chúng đã có style riêng
-                #if widget_class in ['Label', 'TFrame', 'Frame'] and not isinstance(child, ttk.Checkbutton):
-                child.config(background=bg)
+                if isinstance(child, (tk.Frame, tk.Label)):
+                    child.config(background=bg)
+
                 # Chỉ đổi màu chữ cho Label, không đổi cho Frame
-                if widget_class == 'Label':
+                if isinstance(child, (ttk.Label, tk.Label)):
                     # Nếu là label đặc biệt (status, italic) thì dùng màu chữ phụ
                     if child == self.lbl_realtime_status or "italic" in str(child.cget("font")):
-                        child.config(fg=special_fg)
+                        child.config(foreground=special_fg)
                     else:
-                        child.config(fg=fg)
+                        child.config(foreground=fg)
 
             except tk.TclError:
                 # Bỏ qua các widget không có thuộc tính 'font' (ví dụ: Frame, Scrollbar)
