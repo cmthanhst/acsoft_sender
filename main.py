@@ -570,7 +570,7 @@ class MacroApp(ThemedTk):
             # --- SỬA: TÍNH TOÁN VỊ TRÍ GÓC DƯỚI BÊN PHẢI ---
             screen_width = self.winfo_screenwidth()
             screen_height = self.winfo_screenheight()
-            window_width = 450
+            window_width = 300
             # Đặt vị trí x: (chiều rộng màn hình - chiều rộng cửa sổ - padding)
             x_pos = screen_width - window_width - 10
             # Đặt vị trí y: (chiều cao màn hình - chiều cao cửa sổ - chiều cao taskbar ước tính)
