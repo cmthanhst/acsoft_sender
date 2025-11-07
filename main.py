@@ -437,7 +437,7 @@ class RecordingHUD(tk.Toplevel):
 
 LOGO_PNG_BASE64 = b"iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAuaSURBVHgB7Z1PbB1HHcd/s/bzn9hungsxTYiEE4QtQioCLoIDpQZy4VA1KCSBSEB6aY5ce2u4g1CP9BLCIWkbrFgKEkWUKlVbCQSGqGnTOlDbVdOmjdvaTf0v79m73e9rN7LWO29nd2d3Znb2c8nz7rOzO9/vzP5m5jezjCKonz5Ur/XVfsk8Nk6ed8A/NEwV5uHRZXLYnEc0OX/s6TNRX2HhA0NnDx/yHOe0f6JOFWVizmPsVNgIzuYfdjx59HfkOBcq8UvJMPO8Pww9dfSxzQc7gg84wch7lCrKzvi2n+yvr/zp1b/ih9YjYMe5IycYo9NUYQ+u++ObxycmWwYYevLILEUEeo2ZBVp+do7W31kib22dKsyitrdOvWP3UM/YzqjTi43V5p6Oz2r/ifBZCP/x+dfJXVgjWnepwjyg3e2r77c+d+0dDJ/u6aw57zkeeQ+Fz6xN3fANMEsV5QCVuTGzGHGGjTssoulfnXqXKspFVIX2xwe+7jDGDoRPNCPdUi7OLq7SeMOeuAZxXATDDlnILtej0Q2PTi01W59tgBfEW2mABxobrX8HPJjgNtmMlQZ4cK155/NY06XjFndxrTNA0Pxv5pGVJg1Y8igIY50BxpobW47hUXBytUk2Yp0Bgud/mJ/5j4Eoc5Qd6wxwX5M/qmljK2CVAVDD0dzzz7vWtQJWGWC8ES/uqaUG2YR1LUAc6CXY1C20xgBR3T8e6BbagjUGSPJsR5xgSyxgjQEeaCQTdLxRGaBUtOv+yfi+qVhhgLjuXxT9nh1Dw1YYYGQjuZi2TBNbYYDvp0j8eMdhZAOWPAKSP8+XWGWAUpC2O3fLkvDYAgOki+avddjhgNLf5X3r6VqAqVoH2YDWBnAGeygrI+vponmZQSDug/V0ko5oa4AOv9AGH/lGJhOg7z+Qoj8P8a91yikaJ7iP3soAiQlM0Lmzn4pElvidu/rp7l99q3UfuqJ9DNAywcl0JvjY78qlacovdWV//kP8Omq+pk1/gBFBIJ6faU2QRsysAaAp4gN9DRAqvLQmuJhQBLQYWQJAk8QH2hogKmgKTNC97/MkCvrzUzXx20zy3TC4Lp74jqZxgHHjADDB9l/cSz1j9wj/zu97a8LfvdidrubienBdptT8AGMHgu468lVhE+CZLlKzETSmef7jOnA9JmL0SGASE5zq7479Tprm32TxgfFDwaImQGB3NqZ5TtpjMF18oPVIoCgQoe/gntjvPbGt1mrmeSRp/vsODicSX9fBILkGGPVr4hfvJhVAkDgTQHxeK/Bvv/kX7f6J/F+5gfLdv5tkIdcAQ9uJvjdCdK+8C0yCiDDn/O5llNCXamLRu1LxUcFQvoN9JAu5BgiaUDhUUxOgFfhtX9eW4893xzf/WcTPvM8iyvSbw59+7pI3VS3XAJsvLKMJNrA/YUrihEKwtzniFxn9y1rz3dUMBgiXpb4GCDWjuPDvfJnSkKnAKF6w32xqBeKif6XNPsovXJFq8gab8u8F7NmRzgQSFmhCOF4XEUPEQUDYzgD4fRniu2laNJQbyi9Hihm3xE3Atf94g6gpJiweAa5vgqxDq0FXbS1i80t0C0fWXW73D2P7svr5iR5pKCsEe0N3Ud7kFwOE2T1I9MN9iZovzuaGiRl48CuRs4gICE9uj+6fY1Zv4Kgc8RtJNt5E+aCc2omv7SMg7sIGtyUyQXNmgWQQTCCJzsjhe9t/Lm9ip3F1XuyLgfgop3ZoGwSKkMAEKy9eJ1lgJK7uiyoC0tBkjtzdfvX9+C+Jii8ZNUPBuMkf+WL0tZ+gQd8ZO5fLAs16XECHwFGm+Lj+2Oc/ykGB+EDdXEBw0zEmwFbnrsQtW7Z9dzc3RRtNv8zuHq4b198WheIDtZNBAiZA7Vn+m7x3F0D87q9FZxTJzj5eeXa2fe0XrAR5on42UKAQVl+6TisvvUWy4OXo13bJMwDil7YxjAbiAz2mgwUKY+ni/6kpqVvo1HsjjzNJizfQfV368//4X9BEfKBPPoBAoSw+8d9McwQBTm90N0pGtw/Xt+BfJxeNxAd6JYTEFA56BTJM4HCDwF7KAq4L18ed+dNMfKBfRlBMIQWFnMkECbKERYm9Lg3FB3qmhN3pGkUnPkgxgURir0dw3EMF+iaForB+oL8JhMRPOAdSJHIN0JQ3YNMCY94amwDRvhLxJW5iKdcAeeyuGZiAk2yKwv/w8X9J6yKKAvEX2omP2by8ar7EimbGugCYAPPjnOSIoHdQlAkC8bnRPq5T42Z/M2YtDGmTIROYIHhXbl4gsSRW/JRpcMJo2wIU8Q4+FO5odJoXRPnoj1cis39kgL976/xrasUH2sYARW2xjvToNhnHEEnm3AEIxOeSIQE2MfoGgQW+aSMm7RxzB9w3oHNeDuUurEYex5RurPhFroNYltfSyjXA4jIVSkzBQ7goEyTJL+D9DdFryIWGrjGAipcspDSBCFqKDyRWNLkGuHmLlJCDCbQVHyzLe7OZ3I4qnk3ooqjo/wYrZq9EJ2EEqVkiKV+Yy2+bzKFSfLSyC/JaAPlKvbVAtDff1SxcBEyAkTte0ifOIdhr241UKT64/iHJRL4BZufVGQDEmADi8pJCUevbruJVLT54W64B5I8EIg6QPSmUFAg1yt82hiey9uLjEXtdzmKZgHyGgl/PZyQuERgskrWwEn9HtfhgWt4aiYB8DHDthvpWAMAEWXfTwJTu2JdIOaj9M/LnOfIxACLVl98m5WAW8f6R9Jk4+L37R/WY1UNMk0Olym82EK3Ae4rGBTYTiJgGXXL4UPtnBReYJiTf6eB/vqHHoyBNM46gT5ccvr9fpbzI1wBw7tSbpAUjO8U3XIDwOgR94D9zUid/wuSfEIKm64q8Zd6ZEBX12wVN68bxil9u0/n2qIrJCMKN6GACtABxrQDOfyH/rVliKajMiksJww3lFMgkIm5sQOUoZkCBrWaxOYHYJEq1CXbHbGWLvYxUgvJBORVE8UmhuDmV3UOMDfCi+3qf2j4/JnoKFB+oyQp+cVrqlGZieLtxSNx8KTELK774M1Q0agyAkcLnrqozAa+Wq+r3Q3z09RWMmahbF6DSBDyhVRhAofhA7cIQ1S2BahSLD9SvDFJhgi7OI6DIGEAD8YEeS8OKNgHv1TBF9QA0ER/oszYQJnjhWq7j3lqA+3thWo9JMtJtcSgKBzWjrCbQ8P70Wx1cVhNoel96Lg8PCqvo3kFXTjFA8MzX0NT67g+AwsorMOS9RbSWQy9AY/GB3htEmD5OoFG0z0P/HUJMNYEB4gMztogxzQSGiA/M2SPIFBMYJD4wa5Mo3U1gmPjALAOAwASSV8lmBkkuhokPzDMACIaN06aXyZ70wXU8Z574wEwDBKTNMeRN+vSnyAcoOIdPNmYbAKhMNDVcfGC+AQBEKHrdAdLcDRcflMMAoMjFJ7osdJFAeQwAihCmROKDchkA5ClQycQH+u9nngYIha6izJ09sEp3WoOtbyRTvhYgABtUyArS8HdKKD4oZwsQgG4atlUNv7xBdF0ABnZaiSkrVFbK2wIEQLy/XEmekHEnK6m84oPyGwAkzcezRHxghwEARH3m5fhJJEzqpGkxDCUyBsBWqt6aeRMbsQSTSPs5W8Ug0EO0bxFoAebCBzslvkZdS17h9OVLLH5tb33rQUaXHdfzLoePi2ypXmEWPWM7txxjHr3p+C54Pnyiy3dLZYLy0HdwmHrHtm6e7TJ2gdVPH6rXemuzjGhLG7E69S6tTd2g5swiVZgF4jg8ylGRu6Kaf//Rf/On5/cwfPrcU4cPdXjOBaqwBo+xE/PHnj7T6gZ+cGxi0nPdx6nCDjzv1xAfH+8kx61MvPZM3+F9jBgbp4rSgoo+f3zi0eBnFv7CjnNHTjBGj/kfh6miNHj+rAhz3YdvHp+Y3Hyc8X6hZQTyHvJ/cZgxdoAqTGTOb+4vex3sUnO5eWbx4ckt0fwns0fTFXINfJMAAAAASUVORK5CYII="  # Placeholder
 
-
+is_collapsed = True
 class MacroApp(ThemedTk):
     def __init__(self):
         super().__init__(theme="arc")
@@ -478,6 +478,8 @@ class MacroApp(ThemedTk):
         self._offset_x = 0
         self._offset_y = 0
         # self.title("...") # Không cần title nữa
+        self._offset_x = 0 # Biến cho việc kéo thả cửa sổ
+        self._offset_y = 0 # Biến cho việc kéo thả cửa sổ
         self.geometry("1000x800")
         
         # SỬA: Tạm thời ẩn cửa sổ để áp dụng style một cách an toàn
@@ -537,13 +539,53 @@ class MacroApp(ThemedTk):
         self.bind("<Configure>", self._apply_rounding_region)
         
         # SỬA: Áp dụng việc xóa title bar ngay lập tức và sau đó hiển thị lại cửa sổ
-        self._remove_title_bar()
+        # self._remove_title_bar()
         self.update_idletasks()
         self.deiconify()
 
 
         # SỬA: Hiển thị icon trên taskbar để có thể minimize/restore
-        self.after(10, lambda: self._set_appwindow())
+        # self.after(10, lambda: self._set_appwindow())
+        # SỬA: Hợp nhất các lệnh tùy chỉnh cửa sổ và gọi sau khi mainloop bắt đầu
+        self.after(10, self._setup_custom_window)
+    #viết 1 hàm minimize được gọi khi ấn vào nút minimize. sẽ thu cửa sổ nhỏ lại chỉ còn kích thước vừa logo, tiêu đề app và hàng nút thu nhỏ, đóng app.
+    def _set_appwindow(self):
+        
+        """
+        SỬA: Thu nhỏ cửa sổ về kích thước chỉ còn thanh tiêu đề tùy chỉnh.
+        """
+        if not self.is_collapsed:
+            self.normal_geometry = self.geometry() # Lưu lại kích thước ban đầu
+            # Lấy chiều cao của thanh tiêu đề
+            self.update_idletasks()
+            header_height = self.header_frame.winfo_height()+20
+            
+            # --- SỬA: TÍNH TOÁN VỊ TRÍ GÓC DƯỚI BÊN PHẢI ---
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+            window_width = 300
+            # Đặt vị trí x: (chiều rộng màn hình - chiều rộng cửa sổ - padding)
+            x_pos = screen_width - window_width - 10
+            # Đặt vị trí y: (chiều cao màn hình - chiều cao cửa sổ - chiều cao taskbar ước tính)
+            y_pos = screen_height - header_height - 40
+            self.geometry(f"{window_width}x{header_height}+{x_pos}+{y_pos}") # Kích thước nhỏ, đặt ở góc dưới bên phải
+            self.is_collapsed = True
+            # Ẩn các phần còn lại của ứng dụng
+            self.top_controls_frame.grid_remove()
+            self.g_data_macro.grid_remove()
+            self.g5.grid_remove()
+            self.realtime_status_frame.grid_remove()
+            self.minimize_btn.config(text=" □ ") # Đổi nút thành restore
+        else:
+            self.geometry(self.normal_geometry) # Khôi phục kích thước ban đầu
+            self.is_collapsed = False
+            # Hiện lại các phần của ứng dụng
+            self.top_controls_frame.grid()
+            self.g_data_macro.grid()
+            self.g5.grid()
+            self.realtime_status_frame.grid()
+            self.minimize_btn.config(text=" _ ") # Đổi nút thành minimize
+            
     def _on_title_bar_press(self, event):
         self._offset_x = event.x
         self._offset_y = event.y
@@ -554,33 +596,7 @@ class MacroApp(ThemedTk):
         self.geometry(f"+{x}+{y}")
 
     def minimize_window(self):
-        self.iconify()
-        """SỬA: Thu gọn cửa sổ về thanh tiêu đề và di chuyển xuống góc phải."""
-        if not self.is_collapsed:
-            # Lưu lại vị trí và kích thước hiện tại
-            self.normal_geometry = self.geometry()
-            
-            # Ẩn các thành phần chính
-            self.top_controls_frame.grid_remove()
-            self.g_data_macro.grid_remove()
-            self.g5.grid_remove()
-            self.realtime_status_frame.grid_remove()
-            self.disclaimer_label.grid_remove()
-
-            # Tính toán vị trí góc dưới bên phải
-            screen_width = self.winfo_screenwidth()
-            screen_height = self.winfo_screenheight()
-            header_height = self.header_frame.winfo_height() + 20 # +20 padding
-            
-            self.geometry(f"{self.winfo_width()}x{header_height}+{screen_width - self.winfo_width()}+{screen_height - header_height - 40}") # 40px cho taskbar
-            self.minimize_btn.config(text=" ❐ ") # Thay đổi icon thành "phục hồi"
-            self.is_collapsed = True
-        else:
-            # Phục hồi lại cửa sổ
-            self.setup_ui() # Gọi lại để vẽ lại các widget
-            self.geometry(self.normal_geometry)
-            self.minimize_btn.config(text=" _ ")
-            self.is_collapsed = False
+        self._set_appwindow()
 
     def _apply_rounding_region(self, event):
         """SỬA: Áp dụng bo góc bằng phương pháp SetWindowRgn, đáng tin cậy hơn."""
@@ -593,17 +609,24 @@ class MacroApp(ThemedTk):
         except Exception:
             pass
 
-    def _remove_title_bar(self):
-        """SỬA: Xóa viền và thanh tiêu đề bằng WinAPI thay cho overrideredirect."""
-    def _set_appwindow(self):
-        """SỬA: Ép cửa sổ hiển thị trên taskbar."""
+    def _setup_custom_window(self):
+        """SỬA: Hợp nhất các hàm tùy chỉnh cửa sổ (xóa title bar, hiện trên taskbar)."""
         try:
             hwnd = self.winfo_id()            
             # SỬA: Xóa bỏ triệt để các style liên quan đến title bar và viền
+            hwnd = self.winfo_id()
+            # 1. Xóa bỏ triệt để các style liên quan đến title bar và viền
             style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
             style &= ~(win32con.WS_CAPTION | win32con.WS_THICKFRAME | win32con.WS_MINIMIZEBOX | win32con.WS_MAXIMIZEBOX)
             win32gui.SetWindowLong(hwnd, win32con.GWL_STYLE, style)
             # SỬA: Buộc cửa sổ vẽ lại với style mới ngay lập tức
+
+            # 2. Ép cửa sổ hiển thị trên taskbar
+            ex_style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+            ex_style |= win32con.WS_EX_APPWINDOW
+            win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, ex_style)
+
+            # 3. Buộc cửa sổ vẽ lại với style mới ngay lập tức
             win32gui.SetWindowPos(hwnd, None, 0, 0, 0, 0, win32con.SWP_FRAMECHANGED | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOZORDER | win32con.SWP_NOOWNERZORDER)
             hwnd = self.winfo_id()
             style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
@@ -649,9 +672,6 @@ class MacroApp(ThemedTk):
         window_controls_frame = tk.Frame(header_frame)
         window_controls_frame.grid(row=0, column=3, sticky='e')
 
-        minimize_btn = tk.Label(window_controls_frame, text=" _ ", font=("Arial", 10, "bold"))
-        minimize_btn.pack(side="left")
-        minimize_btn.bind("<Button-1>", lambda e: self.minimize_window())
         self.minimize_btn = tk.Label(window_controls_frame, text=" _ ", font=("Arial", 10, "bold"))
         self.minimize_btn.pack(side="left")
         self.minimize_btn.bind("<Button-1>", lambda e: self.minimize_window())
@@ -666,8 +686,6 @@ class MacroApp(ThemedTk):
             widget.bind("<B1-Motion>", self._on_title_bar_drag)
 
         # Gán sự kiện hover cho các nút
-        minimize_btn.bind("<Enter>", lambda e: e.widget.config(background="#6c757d"))
-        minimize_btn.bind("<Leave>", lambda e: self._update_widget_colors(header_frame, *self.get_current_colors()))
         self.minimize_btn.bind("<Enter>", lambda e: e.widget.config(background="#6c757d"))
         self.minimize_btn.bind("<Leave>", lambda e: self._update_widget_colors(header_frame, *self.get_current_colors()))
         close_btn.bind("<Enter>", lambda e: e.widget.config(background="#dc3545"))
@@ -678,11 +696,7 @@ class MacroApp(ThemedTk):
         top_controls_frame.grid_columnconfigure(0, weight=1)
         top_controls_frame.grid_columnconfigure(1, weight=2)
         top_controls_frame.grid_columnconfigure(2, weight=1)
-        self.top_controls_frame = ttk.Frame(main_frame)
-        self.top_controls_frame.grid(row=1, column=0, sticky="ew", pady=5)
-        self.top_controls_frame.grid_columnconfigure(0, weight=1)
-        self.top_controls_frame.grid_columnconfigure(1, weight=2)
-        self.top_controls_frame.grid_columnconfigure(2, weight=1)
+        self.top_controls_frame = top_controls_frame
 
         g1 = ttk.LabelFrame(top_controls_frame, text="1) Đường dẫn file chạy ACSOFT")
         g1.grid(row=0, column=0, sticky="nwe", padx=(0, 10), pady=5)
@@ -763,9 +777,7 @@ class MacroApp(ThemedTk):
         g_data_macro = ttk.Frame(main_frame)
         g_data_macro.grid(row=2, column=0, sticky="nsew", pady=5)
         g_data_macro.grid_rowconfigure(0, weight=1)
-        self.g_data_macro = ttk.Frame(main_frame)
-        self.g_data_macro.grid(row=2, column=0, sticky="nsew", pady=5)
-        self.g_data_macro.grid_rowconfigure(0, weight=1)
+        self.g_data_macro = g_data_macro
 
         # Cấu hình 2 cột: Cột 0 (CSV) và Cột 1 (Macro) đều co giãn bằng nhau
         g_data_macro.grid_columnconfigure(0, weight=1, uniform="group1")
@@ -841,8 +853,7 @@ class MacroApp(ThemedTk):
         # RUN BUTTONS
         g5 = ttk.Frame(main_frame)
         g5.grid(row=3, column=0, sticky="ew", pady=(5, 0))
-        self.g5 = ttk.Frame(main_frame)
-        self.g5.grid(row=3, column=0, sticky="ew", pady=(5, 0))
+        self.g5 = g5
 
         tk.Label(g5, text="Chọn Chế độ Chạy:", font=("Arial", 9, "bold")).pack(side="left", padx=(0, 10))
 
