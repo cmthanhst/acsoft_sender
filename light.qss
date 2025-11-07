@@ -1,0 +1,22 @@
+/* light.qss */
+QWidget {
+    background-color: #f0f0f0; /* Màu nền chung */
+    font-family: SansSerif; /* SỬA: Đặt font chữ mặc định là Courier */
+    color: #333333; /* Màu chữ chung */
+    font-size: 10pt;
+}
+
+QPushButton {
+    background-color: #e0e0e0;
+    border: 1px solid #c0c0c0;
+    padding: 5px;
+}
+
+QPushButton:hover {
+    background-color: #d0d0d0;
+}
+
+QLineEdit, QTextEdit, QComboBox, QSpinBox, QListWidget {
+    background-color: white;
+    border: 1px solid #c0c0c0;
+}

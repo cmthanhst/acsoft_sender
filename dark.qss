@@ -1,0 +1,39 @@
+/* dark.qss */
+QWidget {
+    background-color: #2e2e2e; /* Màu nền chung tối */
+    font-family: SansSerif; /* SỬA: Đặt font chữ mặc định là Courier */
+    color: #f0f0f0; /* Màu chữ trắng */
+    font-size: 10pt;
+}
+
+QGroupBox {
+    border: 1px solid #4f4f4f;
+    #margin-top: 10px; /* Khoảng cách cho tiêu đề GroupBox */
+}
+
+QPushButton {
+    background-color: #4a4a4a;
+    color: white;
+    border: 1px solid #6c6c6c;
+    padding: 5px;
+}
+
+QPushButton:hover {
+    background-color: #5c5c5c;
+}
+
+QLineEdit, QTextEdit, QComboBox, QSpinBox, QListWidget {
+    background-color: #1e1e1e; /* Nền input tối hơn */
+    color: white;
+    border: 1px solid #4a4a4a;
+}
+
+QProgressBar::chunk {
+    background-color: #55aaff; /* Màu thanh progress */
+}
+
+QSlider::groove:horizontal {
+    background: #4a4a4a;
+    height: 8px;
+    border-radius: 4px;
+}
