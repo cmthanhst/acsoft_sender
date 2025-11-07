@@ -41,7 +41,6 @@ except ImportError:
     exit()
 
 # Cần cài đặt: pip install pywin32
-from tkinter import font as tkFont
 try:
     import win32gui
     import win32con
@@ -363,8 +362,7 @@ class RecordingHUD(tk.Toplevel):
         style.configure("HUD.TFrame", background="#282c34")
         style.configure("HUD.TLabel", background="#282c34", foreground="white", font=("Courier", 10))
         style.configure("HUD.TButton", font=("Courier", 9, "bold"), foreground="white")
-        style.map("HUD.TButton",
-                  background=[('active', '#e06c75'), ('!active', '#d15660')],
+        style.map("HUD.TButton", background=[('active', '#e06c75'), ('!active', '#d15660')],
                   foreground=[('active', 'white')])
         style.configure("Pause.TButton", font=("Courier", 9, "bold"))
         style.map("Pause.TButton",
@@ -455,12 +453,6 @@ class MacroApp(ThemedTk):
         self.is_collapsed = False
         self.normal_geometry = ""
 
-        # Determine the font family
-        self.preferred_font_family = "Courier"
-        if self.preferred_font_family not in tkFont.families():
-            self.preferred_font_family = "Courier"
-
-        self.option_add("*font", (self.preferred_font_family, 9)) # SỬA: Tải logo từ chuỗi Base64
         original_image = None
         try:
             logo_data = base64.b64decode(LOGO_PNG_BASE64)
@@ -530,34 +522,20 @@ class MacroApp(ThemedTk):
         # SỬA: Khởi tạo self.style TRƯỚC khi gọi setup_ui() để tránh lỗi AttributeError
         self.style = ttk.Style()
         self.style.map("Macro.Treeview", background=[("selected", "#1e90ff"), ("active", "#e1e1e1")])
-        self.style.configure("Macro.Treeview", background="#FFFFFF", fieldbackground="#FFFFFF", font=("Courier", 9))
-
-        # SỬA: Áp dụng font cho Macro.Treeview
-        self.style.configure("Macro.Treeview", background="#FFFFFF", fieldbackground="#FFFFFF", font=(self.preferred_font_family, 9))
+        self.style.configure("Macro.Treeview", background="#FFFFFF", fieldbackground="#FFFFFF")
         self.style.map("Highlight.Treeview", background=[("selected", "#FFA07A"), ("active", "#e1e1e1")]) # This style is not used in the provided code
         
         # SỬA: Cấu hình font cho các widget ttk chung
-        self.style.configure('TButton', font=(self.preferred_font_family, 9))
-        self.style.configure('Accent.TButton', font=(self.preferred_font_family, 9, 'bold'))
-        self.style.configure('TLabelframe.Label', font=(self.preferred_font_family, 9, 'bold')) # Tiêu đề LabelFrame
-        self.style.configure('TEntry', font=(self.preferred_font_family, 9))
-        self.style.configure('TCombobox', font=(self.preferred_font_family, 9))
-        self.style.configure('TSpinbox', font=(self.preferred_font_family, 9))
-        self.style.configure('TRadiobutton', font=(self.preferred_font_family, 9))
-        self.style.configure('TCheckbutton', font=(self.preferred_font_family, 9))
-        self.style.configure('TLabel', font=(self.preferred_font_family, 9)) # Cho ttk.Label
+        self.style.configure('Accent.TButton', font=('TkDefaultFont', 9, 'bold'))
+        self.style.configure('TLabelframe.Label', font=('TkDefaultFont', 9, 'bold')) # Tiêu đề LabelFrame
 
-        self.setup_ui() # Call setup_ui after preferred_font_family is set
-
+        self.setup_ui()
         self.protocol("WM_DELETE_WINDOW", self.on_app_close)
         # self.resizable(False, False) # SỬA: Xóa bỏ dòng này để tránh xung đột
         self.resizable(False, False) # SỬA: Vô hiệu hóa thay đổi kích thước cửa sổ
 
         # BẮT ĐẦU VÒNG LẶP CẬP NHẬT TRẠNG THÁI REAL-TIME
         self._update_status_bar_info()
-
-        # SỬA: Áp dụng font cho tất cả các widget hiện có và widget được tạo sau
-        self._apply_font_recursively(self)
 
         # SỬA: Áp dụng theme ban đầu.
         # Vì toggle_dark_mode() sẽ đảo ngược trạng thái, chúng ta cần đặt giá trị ban đầu
@@ -687,7 +665,7 @@ class MacroApp(ThemedTk):
             logo_label.bind("<Button-1>", self._on_title_bar_press)
             logo_label.bind("<B1-Motion>", self._on_title_bar_drag)
 
-        title_label = tk.Label(header_frame, text="Việt Tín Auto Sender V2025.04", font=(self.preferred_font_family, 10, "bold"))
+        title_label = tk.Label(header_frame, text="Việt Tín Auto Sender V2025.04", font=('TkDefaultFont', 10, 'bold'))
         title_label.grid(row=0, column=1, sticky='w', padx=10)
         title_label.bind("<Button-1>", self._on_title_bar_press)
         title_label.bind("<B1-Motion>", self._on_title_bar_drag)
@@ -702,11 +680,11 @@ class MacroApp(ThemedTk):
         window_controls_frame = tk.Frame(header_frame)
         window_controls_frame.grid(row=0, column=3, sticky='e')
         
-        self.minimize_btn = tk.Label(window_controls_frame, text=" _ ", font=(self.preferred_font_family, 10, "bold"))
+        self.minimize_btn = tk.Label(window_controls_frame, text=" _ ", font=('TkDefaultFont', 10, 'bold'))
         self.minimize_btn.pack(side="left")
         self.minimize_btn.bind("<Button-1>", lambda e: self.minimize_window())
         
-        close_btn = tk.Label(window_controls_frame, text=" X ", font=(self.preferred_font_family, 10, "bold"))
+        close_btn = tk.Label(window_controls_frame, text=" X ", font=('TkDefaultFont', 10, 'bold'))
         close_btn.pack(side="left", padx=(0, 5))
         close_btn.bind("<Button-1>", lambda e: self.on_app_close())
 
@@ -834,7 +812,7 @@ class MacroApp(ThemedTk):
         g3_controls_record = ttk.Frame(g3)
         g3_controls_record.grid(row=0, column=0, sticky='ew', padx=5, pady=(5, 5))
 
-        self.btn_record = ttk.Button(g3_controls_record, text="● Record Macro (5s chuẩn bị)", command=self.record_macro,
+        self.btn_record = ttk.Button(g3_controls_record, text="⚫ Record Macro (5s chuẩn bị)", command=self.record_macro,
                                      style='Accent.TButton')
         self.btn_record.pack(side="left", padx=(0, 10))
 
@@ -876,7 +854,7 @@ class MacroApp(ThemedTk):
         )
 
         # G3: Hàng 4 - Ghi chú cho Record
-        tk.Label(g3, text="Ghi: Insert->cột | Phím/Chuột->thao tác | ESC->kết thúc", font=(self.preferred_font_family, 9, "italic"), fg="gray").grid(row=4, column=0, sticky="w", padx=5, pady=(5, 5))
+        tk.Label(g3, text="Ghi: Insert->cột | Phím/Chuột->thao tác | ESC->kết thúc", font=('TkDefaultFont', 9, 'italic'), fg="gray").grid(row=4, column=0, sticky="w", padx=5, pady=(5, 5))
         # ====================================================================
 
         # RUN BUTTONS
@@ -885,18 +863,18 @@ class MacroApp(ThemedTk):
         
         self.g5 = g5
 
-        tk.Label(g5, text="Chọn Chế độ Chạy:", font=("Courier", 9, "bold")).pack(side="left", padx=(0, 10))
+        tk.Label(g5, text="Chọn Chế độ Chạy:", font=('TkDefaultFont', 9, 'bold')).pack(side="left", padx=(0, 10))
 
-        self.btn_test = ttk.Button(g5, text="▶️ CHẠY THỬ (1 DÒNG)", command=self.on_test, style='Accent.TButton')
+        self.btn_test = ttk.Button(g5, text="►CHẠY THỬ (1 DÒNG)", command=self.on_test, style='Accent.TButton')
         self.btn_test.pack(side="left", padx=10)
 
-        self.btn_runall = ttk.Button(g5, text="▶️ CHẠY TẤT CẢ", command=self.on_run_all, style='Accent.TButton')
+        self.btn_runall = ttk.Button(g5, text="►CHẠY TẤT CẢ", command=self.on_run_all, style='Accent.TButton')
         self.btn_runall.pack(side="left", padx=10)
 
         self.btn_stop = ttk.Button(g5, text="STOP (ESC)", command=self.on_cancel, state='disabled')
         self.btn_stop.pack(side="left", padx=10)
 
-        self.lbl_status = tk.Label(g5, text="Chờ...", fg="#1e90ff", font=(self.preferred_font_family, 10, "bold"))
+        self.lbl_status = tk.Label(g5, text="Chờ...", fg="#1e90ff", font=('TkDefaultFont', 10, 'bold'))
         self.lbl_status.pack(side="left", padx=(20, 0))
 
         # ------------------------ REAL-TIME STATUS FRAME ------------------------
@@ -931,21 +909,19 @@ class MacroApp(ThemedTk):
         # --- KẾT THÚC SỬA ---
         self._toggle_realtime_status()
 
-    def _apply_font_recursively(self, parent):
+    def _reapply_default_font_styles(self):
         """
-        Áp dụng font chữ cho tất cả các widget con của một widget cha.
+        SỬA: Áp dụng lại các style font mặc định cho các widget ttk.
+        Hàm này được gọi sau khi thay đổi theme để đảm bảo font không bị ghi đè.
         """
-        for child in parent.winfo_children():
-            try:
-                child.config(font=(self.preferred_font_family, 9))
-            except tk.TclError:
-                # Widget này không hỗ trợ cấu hình font
-                pass
+        default_font = ('TkDefaultFont', 9)
+        bold_font = ('TkDefaultFont', 9, 'bold')
 
-            # Gọi đệ quy cho các widget con của widget này
-            self._apply_font_recursively(child)
-
-
+        self.style.configure('TButton', font=default_font)
+        self.style.configure('Accent.TButton', font=bold_font)
+        self.style.configure('TLabelframe.Label', font=bold_font)
+        self.style.configure('TLabel', font=default_font)
+        self.tree_macro.tag_configure('highlight', background='#FFA07A', font=bold_font)
     # -------------------------- UI Helpers (Theme, Status, etc.) --------------------------    
     def get_current_colors(self):
         """Trả về bộ màu (bg, fg, special_fg) cho theme hiện tại."""
@@ -969,8 +945,7 @@ class MacroApp(ThemedTk):
 
         # --- SỬA: CẤU HÌNH LẠI STYLE CHO NÚT DARK MODE SAU KHI ĐỔI THEME ---
         # Việc này đảm bảo font tùy chỉnh không bị theme mới ghi đè.
-        self.style.configure('DarkMode.TButton', font=('Courier', 12))
-        self.style.configure('DarkMode.TButton', font=(self.preferred_font_family, 12))
+        self.style.configure('DarkMode.TButton', font=('TkDefaultFont', 12))
         # SỬA: Cập nhật ký tự trên nút
         new_text = "◐" if is_dark else "☀"
         if self.dark_mode_btn:
@@ -983,8 +958,8 @@ class MacroApp(ThemedTk):
         for widget in self.winfo_children():
             self._update_widget_colors(widget, bg_color, fg_color, special_fg_color)
 
-        # SỬA: Gọi lại hàm áp dụng font đệ quy sau khi đổi theme
-        self._apply_font_recursively(self)
+        # SỬA: Áp dụng lại các style font sau khi đã đổi theme để tránh bị ghi đè
+        self._reapply_default_font_styles()
 
     def _update_widget_colors(self, parent_widget, bg, fg, special_fg):
         """Đệ quy cập nhật màu cho các widget con."""
@@ -1393,7 +1368,7 @@ class MacroApp(ThemedTk):
                 # SỬA LỖI: Sử dụng lambda để gọi pack() với các đối số từ khóa một cách chính xác
                 self.after(0, lambda: self.hud_window.pause_button.pack(side="left", padx=(0, 10)))
 
-                self.after(0, self.hud_window.update_status, "▶️ ĐANG CHẠY, ẤN ESC ĐỂ DỪNG...", "#98FB98")
+                self.after(0, self.hud_window.update_status, "► ĐANG CHẠY, ẤN ESC ĐỂ DỪNG...", "#98FB98")
                 self._macro_run_worker(test_mode)
             else:
                 # Nếu bị hủy trong lúc đếm ngược, chỉ cần reset các nút
@@ -1546,7 +1521,7 @@ class MacroApp(ThemedTk):
                             style='Macro.Treeview')
 
         # Thẻ để highlight dòng đang chạy
-        tree.tag_configure('highlight', background='#FFA07A', font=(self.preferred_font_family, 9, 'bold'))
+        tree.tag_configure('highlight', background='#FFA07A', font=('TkDefaultFont', 9, 'bold'))
 
         tree.heading("#0", text="STT", anchor='center')
         tree.column("#0", width=50, stretch=tk.NO, anchor='center')
