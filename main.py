@@ -442,6 +442,9 @@ class MacroApp(ThemedTk):
     def __init__(self):
         super().__init__(theme="arc")
 
+        # SỬA: Giữ cho cửa sổ ứng dụng luôn ở trên cùng
+        self.attributes('-topmost', True)
+
         # SỬA: Bỏ thanh tiêu đề mặc định của Windows
         self.overrideredirect(True)
         self._offset_x = 0
@@ -508,6 +511,7 @@ class MacroApp(ThemedTk):
         self.txt_acpath = None
         self.txt_csv = None
         self.lbl_realtime_status = None
+        self.dark_mode_btn = None # SỬA: Thêm biến cho nút dark mode
 
         self.mouse_listener = None
         self.keyboard_listener = None
@@ -532,9 +536,11 @@ class MacroApp(ThemedTk):
         # BẮT ĐẦU VÒNG LẶP CẬP NHẬT TRẠNG THÁI REAL-TIME
         self._update_status_bar_info()
 
-        # SỬA: Áp dụng theme ban đầu
+        # SỬA: Áp dụng theme ban đầu.
+        # Vì toggle_dark_mode() sẽ đảo ngược trạng thái, chúng ta cần đặt giá trị ban đầu
+        # là ngược lại với giá trị mong muốn (muốn tối -> đặt là sáng) rồi mới gọi hàm.
+        self.dark_mode_var.set(False) # Đặt là 'sáng' để lần gọi đầu tiên sẽ chuyển thành 'tối'.
         self.toggle_dark_mode()
-        
         # SỬA: Gán sự kiện để bo góc cửa sổ khi kích thước thay đổi (chạy 1 lần lúc đầu)
         self.bind("<Configure>", self._apply_rounding_region)
         
@@ -663,10 +669,11 @@ class MacroApp(ThemedTk):
         title_label.bind("<Button-1>", self._on_title_bar_press)
         title_label.bind("<B1-Motion>", self._on_title_bar_drag)
 
-        # SỬA: Thêm nút chuyển chế độ tối
-        dark_mode_check = ttk.Checkbutton(header_frame, text="Tối", variable=self.dark_mode_var,
-                                          command=self.toggle_dark_mode, style="Switch.TCheckbutton", width=4)
-        dark_mode_check.grid(row=0, column=2, sticky='e', padx=5)
+        # SỬA: Thay Checkbutton bằng Button để chuyển chế độ tối
+        initial_dark_mode_text = "◐" if self.dark_mode_var.get() else "☀"
+        self.dark_mode_btn = ttk.Button(header_frame, text=initial_dark_mode_text,
+                                        command=self.toggle_dark_mode, width=5)
+        self.dark_mode_btn.grid(row=0, column=2, sticky='e', padx=5)
 
         # SỬA: Frame chứa các nút điều khiển cửa sổ
         window_controls_frame = tk.Frame(header_frame)
@@ -804,7 +811,7 @@ class MacroApp(ThemedTk):
         g3_controls_record = ttk.Frame(g3)
         g3_controls_record.grid(row=0, column=0, sticky='ew', padx=5, pady=(5, 5))
 
-        self.btn_record = ttk.Button(g3_controls_record, text="Record Macro (5s chuẩn bị)", command=self.record_macro,
+        self.btn_record = ttk.Button(g3_controls_record, text="● Record Macro (5s chuẩn bị)", command=self.record_macro,
                                      style='Accent.TButton')
         self.btn_record.pack(side="left", padx=(0, 10))
 
@@ -857,10 +864,10 @@ class MacroApp(ThemedTk):
 
         tk.Label(g5, text="Chọn Chế độ Chạy:", font=("Arial", 9, "bold")).pack(side="left", padx=(0, 10))
 
-        self.btn_test = ttk.Button(g5, text="CHẠY THỬ (1 DÒNG)", command=self.on_test, style='Accent.TButton')
+        self.btn_test = ttk.Button(g5, text="▶️ CHẠY THỬ (1 DÒNG)", command=self.on_test, style='Accent.TButton')
         self.btn_test.pack(side="left", padx=10)
 
-        self.btn_runall = ttk.Button(g5, text="CHẠY TẤT CẢ", command=self.on_run_all, style='Accent.TButton')
+        self.btn_runall = ttk.Button(g5, text="▶️ CHẠY TẤT CẢ", command=self.on_run_all, style='Accent.TButton')
         self.btn_runall.pack(side="left", padx=10)
 
         self.btn_stop = ttk.Button(g5, text="STOP (ESC)", command=self.on_cancel, state='disabled')
@@ -911,12 +918,21 @@ class MacroApp(ThemedTk):
 
     def toggle_dark_mode(self):
         """Chuyển đổi giữa theme sáng và tối."""
+        # SỬA: Đảo ngược trạng thái khi nút được nhấn
+        # Lấy trạng thái hiện tại và đảo ngược nó
+        current_state = self.dark_mode_var.get()
+        self.dark_mode_var.set(not current_state)
+
         is_dark = self.dark_mode_var.get()
         theme_name = "equilux" if is_dark else "arc"
         self.set_theme(theme_name)
 
         bg_color, fg_color, special_fg_color = self.get_current_colors()
 
+        # SỬA: Cập nhật ký tự trên nút
+        new_text = "◐" if is_dark else "☀"
+        if self.dark_mode_btn:
+            self.dark_mode_btn.config(text=new_text)
         # SỬA: Áp dụng màu nền cho cửa sổ chính
         self.config(background=bg_color)
 
@@ -1216,7 +1232,7 @@ class MacroApp(ThemedTk):
                     bring_to_front(hwnd)
 
                 # Cập nhật HUD sang trạng thái đang ghi
-                self.after(0, self.hud_window.update_status, "🔴 ĐANG GHI... (Nhấn ESC để dừng)", "#FF4500")
+                self.after(0, self.hud_window.update_status, "● ĐANG GHI... (Nhấn ESC để dừng)", "#FF4500")
                 self.update_idletasks()
                 self.after(100, self._start_listeners)
             else:
@@ -1904,8 +1920,12 @@ class MacroApp(ThemedTk):
             self._toggle_realtime_status()
 
             # SỬA: Tải và áp dụng trạng thái dark mode
-            self.dark_mode_var.set(settings.get("dark_mode", True)) # SỬA: Mặc định là True khi tải
-            self.toggle_dark_mode()
+            # Đặt trạng thái mong muốn, sau đó gọi toggle_dark_mode để nó "đảo ngược" lại đúng trạng thái đó
+            # Ví dụ: muốn dark mode (True), ta set var thành False rồi gọi toggle, nó sẽ đảo thành True
+            should_be_dark = settings.get("dark_mode", True)
+            if self.dark_mode_var.get() != should_be_dark:
+                self.dark_mode_var.set(not should_be_dark)
+                self.toggle_dark_mode()
 
             csv_path = settings.get("csv_path")
             if csv_path and os.path.exists(csv_path):
