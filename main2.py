@@ -240,6 +240,10 @@ class RecordingHUD(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        # SỬA: Thêm các thuộc tính cho chức năng Pause/Resume
+        self.pause_event = None # Sẽ là một threading.Event() được truyền từ bên ngoài
+        self.is_paused = False
+
         # Thiết lập cửa sổ không viền, luôn ở trên và trong suốt
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool) # Qt.Tool để không hiện trên taskbar
         self.setAttribute(Qt.WA_TranslucentBackground, True) # Nền trong suốt
@@ -256,6 +260,11 @@ class RecordingHUD(QDialog):
         self.status_label.setObjectName("hudStatusLabel") # Để có thể target trong QSS nếu cần
         layout.addWidget(self.status_label) # Style cho QLabel được định nghĩa trong dark.qss
 
+        # SỬA: Thêm ghi chú cho phím F5
+        self.f5_label = QLabel("(F5)")
+        self.f5_label.setStyleSheet("color: #aaa; font-size: 8pt;") # Màu xám nhạt, chữ nhỏ
+        self.f5_label.hide() # Ẩn ban đầu
+
         self.pause_button = QPushButton("❚❚ PAUSE") # Font được định nghĩa trong dark.qss
         self.pause_button.setObjectName("hudPauseButton")
         self.pause_button.hide() # Ẩn ban đầu
@@ -263,6 +272,7 @@ class RecordingHUD(QDialog):
 
         self.stop_button = QPushButton("■ STOP") # Font được định nghĩa trong dark.qss
         self.stop_button.setObjectName("hudStopButton")
+        layout.addWidget(self.f5_label) # SỬA: Thêm label F5 vào layout
         layout.addWidget(self.stop_button)
 
         # Layout chính của Dialog
@@ -289,8 +299,31 @@ class RecordingHUD(QDialog):
             self.move(self.pos() + diff)
             self._drag_pos = event.globalPosition().toPoint()
 
+    # SỬA: Thêm hàm để xử lý việc tạm dừng/tiếp tục
+    def toggle_pause(self):
+        """Xử lý sự kiện khi nút Pause/Resume được nhấn."""
+        if not self.pause_event:
+            return
+
+        self.is_paused = not self.is_paused
+        if self.is_paused:
+            self.pause_event.clear()  # Chặn luồng worker
+            self.pause_button.setText("▶ RESUME")
+            self.update_status("❚❚ TẠM DỪNG", "#FFD700") # Màu vàng
+        else:
+            self.pause_event.set()  # Cho phép luồng worker chạy tiếp
+            self.pause_button.setText("❚❚ PAUSE")
+            # Trạng thái sẽ được cập nhật lại bởi worker, không cần set ở đây
+
     def update_status(self, text, color="white"):
         """Cập nhật văn bản và màu sắc của label trạng thái."""
+        # SỬA: Nếu đang tạm dừng, không cho worker cập nhật đè lên chữ "TẠM DỪNG"
+        if self.is_paused:
+            # Chỉ cho phép cập nhật nếu đó là thông điệp TẠM DỪNG
+            if "TẠM DỪNG" in text:
+                self.status_label.setText(text)
+                self.status_label.setStyleSheet(f"color: {color};")
+            return
         self.status_label.setText(text)
         self.status_label.setStyleSheet(f"color: {color};")
 
@@ -556,6 +589,8 @@ class RecordingWorker(QObject):
 # =========================================================================
 # -------------------- Main Application Window (PySide6) ------------------
 # =========================================================================
+from PySide6.QtCore import Signal # SỬA: Import Signal
+
 class MacroApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -592,6 +627,7 @@ class MacroApp(QMainWindow):
         self.is_collapsed = False
         self.normal_geometry = self.geometry()
 
+        self.is_dark_mode = False # SỬA: Đặt trạng thái ban đầu là False (sáng)
         # SỬA: Thêm các thuộc tính cần thiết cho Group 1
         self.txt_acpath = None
         self.acsoft_path = None
@@ -617,6 +653,7 @@ class MacroApp(QMainWindow):
         # SỬA: Thêm thuộc tính cho việc chạy macro
         self.run_thread = None
         self.run_worker = None
+        self.pause_run_flag = threading.Event() # SỬA: Thêm cờ cho việc Pause/Resume
         self.cancel_run_flag = threading.Event()
         # SỬA: Thêm thuộc tính cho việc tô sáng
         self.highlight_color = QColor("#FFA07A22") # Màu cam nhạt để tô sáng
@@ -648,13 +685,13 @@ class MacroApp(QMainWindow):
         self._create_disclaimer()
 
         # Áp dụng theme tối mặc định
-        self.toggle_dark_mode(is_dark=True) # Gọi để áp dụng dark theme từ file qss
+        self.toggle_dark_mode() # SỬA: Gọi hàm để nó tự chuyển sang chế độ tối
 
         # SỬA: Tải danh sách cửa sổ lần đầu khi khởi động
         self.refresh_windows()
 
         # SỬA: Khởi động listener ESC toàn cục
-        self._start_global_esc_listener()
+        self._start_global_hotkey_listener()
 
         # SỬA: Yêu cầu cửa sổ tự điều chỉnh kích thước sau khi đã tạo xong mọi thứ
         self.adjustSize()
@@ -686,6 +723,7 @@ class MacroApp(QMainWindow):
         # Nút Dark Mode
         self.dark_mode_btn = QPushButton("◐")
         self.dark_mode_btn.setFixedSize(30, 30)
+        self.dark_mode_btn.clicked.connect(self.toggle_dark_mode) # SỬA: Kết nối sự kiện click
         header_layout.addWidget(self.dark_mode_btn)
 
         # SỬA: Thêm nút Always on Top
@@ -958,37 +996,38 @@ class MacroApp(QMainWindow):
             self.move(self.pos() + diff)
             self._drag_pos = event.globalPosition().toPoint()
 
-    def toggle_dark_mode(self, is_dark):
+    def toggle_dark_mode(self):
         """Chuyển đổi giao diện sáng/tối."""
-        self.is_dark_mode = is_dark
-        if is_dark:
+        self.is_dark_mode = not self.is_dark_mode # Đảo ngược trạng thái
+
+        stylesheet = ""
+        if self.is_dark_mode:
             # Giao diện tối
             try:
                 with open('dark.qss', 'r', encoding='utf-8') as f:
                     stylesheet = f.read()
+                self.dark_mode_btn.setText("☀")
             except FileNotFoundError:
                 print("Lỗi: Không tìm thấy file 'dark.qss'. Sử dụng stylesheet mặc định.")
-                stylesheet = ""
-            self.dark_mode_btn.setText("☀")
         else:
-            # Giao diện sáng: Xóa stylesheet hiện tại (hoặc có thể load light.qss nếu muốn)
-            stylesheet = "" 
-            self.dark_mode_btn.setText("◐")
+            # Giao diện sáng
+            try:
+                with open('light.qss', 'r', encoding='utf-8') as f:
+                    stylesheet = f.read()
+                self.dark_mode_btn.setText("◐")
+            except FileNotFoundError:
+                print("Lỗi: Không tìm thấy file 'light.qss'. Sử dụng stylesheet mặc định.")
         
-        # SỬA: Thêm style cho các nút khi bị vô hiệu hóa (disabled)
-        # Điều này sẽ làm cho các nút record, run, stop có màu xám đậm khi không thể nhấn.
-        disabled_button_style = """
-            QPushButton:disabled {
-                background-color: #505050; /* Màu nền xám đậm */
-                color: #888888;          /* Màu chữ xám nhạt */
-                border: 1px solid #606060;
-            }
-        """
-        
-        # Nối chuỗi style mới vào stylesheet đã tải
-        # Bằng cách này, chúng ta không cần sửa file .qss gốc
-        # và vẫn áp dụng được style mong muốn.
-        stylesheet += disabled_button_style
+        # Cập nhật màu nền cho các hàng được tô sáng
+        if self.is_dark_mode:
+            self.highlight_color = QColor("#FFA07A22") # Cam nhạt cho nền tối
+            self.default_bg_color = QColor("#3c4049")
+        else:
+            self.highlight_color = QColor("#FFDAB9") # Màu peachpuff cho nền sáng
+            self.default_bg_color = QColor("#ffffff")
+
+        # Xóa tô sáng cũ để áp dụng màu nền mới
+        self.clear_all_highlights()
 
         self.setStyleSheet(stylesheet)
         # self.update() # Không cần thiết nữa khi không dùng paintEvent
@@ -1636,12 +1675,23 @@ class MacroApp(QMainWindow):
 
         # Reset cờ hủy và cập nhật UI
         self.cancel_run_flag.clear()
+        self.pause_run_flag.set() # SỬA: Đặt cờ pause về trạng thái "chạy" (set) ban đầu
         self._set_buttons_for_running(True) # SỬA: Cập nhật trạng thái các nút
 
         # Hiển thị HUD
         self.hud_window = RecordingHUD(self)
         self.hud_window.stop_button.clicked.connect(self.cancel_run)
         self.hud_window.show()
+
+        # SỬA: Hiển thị và kết nối nút Pause trên HUD
+        self.hud_window.pause_button.show()
+        self.hud_window.f5_label.show() # SỬA: Hiện cả ghi chú F5
+        self.hud_window.pause_event = self.pause_run_flag # Truyền cờ pause vào HUD
+        self.hud_window.pause_button.clicked.connect(self.hud_window.toggle_pause)
+
+        # SỬA: Kết nối signal với slot. Đây là cách giao tiếp an toàn và đáng tin cậy nhất.
+        # Khi signal được emit từ bất kỳ luồng nào, slot sẽ được thực thi trên luồng chính của GUI.
+        self.toggle_pause_signal.connect(self.hud_window.toggle_pause)
 
         # Lấy các cài đặt hiện tại
         use_recorded_speed = self.radio_recorded_speed.isChecked()
@@ -1658,7 +1708,8 @@ class MacroApp(QMainWindow):
             use_recorded_speed=use_recorded_speed,
             custom_delay_s=custom_delay_s,
             row_delay_s=row_delay_s,
-            cancel_flag=self.cancel_run_flag
+            cancel_flag=self.cancel_run_flag,
+            pause_flag=self.pause_run_flag # SỬA: Truyền cờ pause vào worker
         )
         self.run_worker.moveToThread(self.run_thread)
 
@@ -1707,18 +1758,27 @@ class MacroApp(QMainWindow):
         self.run_all_btn.setEnabled(not is_running)
         self.stop_btn.setEnabled(is_running)
         self.lbl_status.setText("Đang chạy..." if is_running else "Chờ...")
+        # SỬA: Ẩn ghi chú F5 khi không chạy
+        if not is_running and self.hud_window:
+            self.hud_window.f5_label.hide()
 
-    def _start_global_esc_listener(self):
-        """Khởi động một listener bàn phím toàn cục để bắt phím ESC."""
+    def _start_global_hotkey_listener(self):
+        """SỬA: Khởi động listener bàn phím toàn cục để bắt phím nóng (ESC, F5)."""
         def on_press_global(key):
             if key == Key.esc:
-                # Gọi cancel_run từ luồng chính của GUI
+                # SỬA: Gọi trực tiếp self.cancel_run(). Hàm này đã được thiết kế thread-safe.
                 self.cancel_run()
-                #QTimer.singleShot(0, self.cancel_run)
+            
+            # SỬA: Thêm logic cho phím F5
+            elif key == Key.f5:
+                # Chỉ hoạt động khi đang chạy macro và HUD đang hiển thị
+                if self.run_worker and self.hud_window:
+                    # SỬA: Không dùng QTimer.singleShot hoặc gọi trực tiếp.
+                    # Thay vào đó, phát một tín hiệu (signal) đã được kết nối sẵn.
+                    self.toggle_pause_signal.emit()
 
-        self.global_esc_listener = keyboard.Listener(on_press=on_press_global)
-        self.global_esc_listener.daemon = True # Cho phép ứng dụng thoát ngay cả khi listener đang chạy
-        self.global_esc_listener.start()
+        self.global_hotkey_listener = keyboard.Listener(on_press=on_press_global, daemon=True)
+        self.global_hotkey_listener.start()
 
     def closeEvent(self, event):
         """Xử lý sự kiện đóng cửa sổ."""
@@ -1726,6 +1786,9 @@ class MacroApp(QMainWindow):
             self.global_esc_listener.stop()
         # Gọi hàm closeEvent của lớp cha để đảm bảo các dọn dẹp khác được thực hiện
         super().closeEvent(event)
+
+    # SỬA: Thêm signal để giao tiếp an toàn giữa các luồng
+    toggle_pause_signal = Signal()
 
     def highlight_csv_row(self, row_index):
         """Tô sáng một hàng trong bảng CSV."""
@@ -1775,7 +1838,7 @@ class MacroRunnerWorker(QObject):
     highlight_csv_row_signal = Signal(int)
     highlight_macro_step_signal = Signal(int)
 
-    def __init__(self, target_window_title, macro_steps, df_csv, test_mode, use_recorded_speed, custom_delay_s, row_delay_s, cancel_flag):
+    def __init__(self, target_window_title, macro_steps, df_csv, test_mode, use_recorded_speed, custom_delay_s, row_delay_s, cancel_flag, pause_flag):
         super().__init__()
         self.target_window_title = target_window_title
         self.macro_steps = macro_steps
@@ -1785,6 +1848,7 @@ class MacroRunnerWorker(QObject):
         self.custom_delay_s = custom_delay_s
         self.row_delay_s = row_delay_s
         self.cancel_flag = cancel_flag
+        self.pause_flag = pause_flag # SỬA: Lưu lại cờ pause
 
     def run(self):
         """Hàm chính của worker, thực thi macro."""
@@ -1817,6 +1881,9 @@ class MacroRunnerWorker(QObject):
                 self.highlight_csv_row_signal.emit(row_index) # Gửi tín hiệu tô sáng dòng CSV
                 self.update_status_signal.emit(f"Đang chạy dòng CSV số: {row_index + 1}/{len(rows_to_run)}...")
 
+                # SỬA: Kiểm tra trạng thái pause trước khi xử lý mỗi dòng
+                self.pause_flag.wait()
+
                 for step in self.macro_steps:
                     if self.cancel_flag.is_set(): break
                     
@@ -1831,6 +1898,9 @@ class MacroRunnerWorker(QObject):
                         send_combo_to_hwnd(hwnd, step.key_value)
                     elif step.typ == 'mouse':
                         send_mouse_click(hwnd, step.x_offset_logical, step.y_offset_logical, step.key_value, step.dpi_scale)
+
+                    # SỬA: Kiểm tra trạng thái pause sau mỗi bước
+                    self.pause_flag.wait()
 
                     # Chờ theo độ trễ đã cấu hình
                     # SỬA: Thay thế time.sleep() bằng vòng lặp không chặn để ESC hoạt động ngay

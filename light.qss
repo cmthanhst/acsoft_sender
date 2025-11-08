@@ -1,22 +1,184 @@
 /* light.qss */
 QWidget {
-    background-color: #f0f0f0; /* Màu nền chung */
-    font-family: SansSerif; /* SỬA: Đặt font chữ mặc định là Courier */
-    color: #333333; /* Màu chữ chung */
+    background-color: #f0f0f0; /* Màu nền chung sáng */
+    font-family: Courier;
+    color: #000000; /* Màu chữ chung (đen) */
     font-size: 10pt;
 }
 
+QMainWindow, #mainFrame { /* Styles cho cửa sổ chính và central widget */
+    background-color: #f0f0f0;
+}
+
+/* SỬA: Cài đặt font cho các label đặc biệt */
+#titleLabel {
+    font-size: 16pt;
+    font-weight: bold;
+    color: #000000; /* Màu đen cho tiêu đề */
+}
+
+/* SỬA: Font cho label trạng thái chạy */
+#statusLabel {
+    font-size: 10pt;
+    font-weight: bold;
+    color: #005a9e; /* Màu xanh dương đậm */
+}
+
+/* SỬA: Font cho label ghi chú cuối cùng */
+#disclaimerLabel {
+    font-style: italic;
+    color: #555555; /* Màu xám đậm */
+}
+
+/* SỬA: Thêm quy tắc này để bo góc cho central widget */
+#mainFrame {
+    border-radius: 20px;
+    border: 1px solid #f0f0f0; /* Viền cùng màu nền */
+}
+
+QGroupBox {
+    color: #000000;
+    font-weight: bold;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+    margin-top: 1ex; /* Khoảng cách cho tiêu đề GroupBox */
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 3px;
+}
+
+QLabel, QRadioButton, QCheckBox {
+    color: #000000;
+}
+
 QPushButton {
-    background-color: #e0e0e0;
-    border: 1px solid #c0c0c0;
-    padding: 5px;
+    background-color: #e1e1e1;
+    color: #000000;
+    border: 1px solid #adadad;
+    padding: 5px 10px;
+    border-radius: 3px;
 }
 
 QPushButton:hover {
-    background-color: #d0d0d0;
+    background-color: #e9e9e9;
 }
 
-QLineEdit, QTextEdit, QComboBox, QSpinBox, QListWidget {
-    background-color: white;
-    border: 1px solid #c0c0c0;
+QPushButton:pressed {
+    background-color: #d1d1d1;
+}
+
+#closeButton { /* Style riêng cho nút đóng trên thanh tiêu đề */
+    background-color: #dc3545;
+    color: white;
+}
+
+#closeButton:hover {
+    background-color: #c82333;
+}
+
+QLineEdit, QSpinBox, QComboBox {
+    background-color: #ffffff;
+    color: #000000;
+    border: 1px solid #adadad;
+    border-radius: 3px;
+    padding: 5px;
+}
+
+QTableWidget {
+    background-color: #ffffff;
+    color: #000000;
+    gridline-color: #dcdcdc;
+    border: 1px solid #adadad; /* Thêm border cho TableWidget */
+    selection-background-color: #0078d7; /* Màu chọn dòng */
+    selection-color: white;
+}
+
+QHeaderView::section {
+    background-color: #e1e1e1;
+    color: #000000;
+    padding: 4px;
+    border: 1px solid #adadad;
+}
+
+/* -------------------- RecordingHUD Specific Styles -------------------- */
+RecordingHUD { /* Base style cho dialog HUD */
+    background-color: transparent; /* Đảm bảo nền dialog trong suốt */
+}
+
+RecordingHUD #mainFrame {
+    background-color: #f0f0f0;
+    color: #000000; /* Màu chữ mặc định cho các phần tử bên trong mainFrame */
+    border-radius: 8px;
+}
+
+RecordingHUD QLabel {
+    color: #000000; /* Màu chữ đen cho HUD status label */
+    font-size: 10pt;
+}
+
+RecordingHUD QPushButton {
+    background-color: #e1e1e1;
+    color: #000000;
+    border: 1px solid #adadad;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 9pt;
+    font-weight: bold;
+}
+
+RecordingHUD QPushButton:hover {
+    background-color: #e9e9e9;
+}
+
+RecordingHUD QPushButton:pressed {
+    background-color: #d1d1d1;
+}
+
+/* Style riêng cho nút STOP trong HUD */
+RecordingHUD QPushButton[text="■ STOP"] {
+    background-color: #dc3545;
+    color: white;
+}
+RecordingHUD QPushButton[text="■ STOP"]:hover {
+    background-color: #c82333;
+}
+
+/* SỬA: Style cho các nút màu đặc biệt trên cửa sổ chính */
+
+/* Nút màu xanh lá (Success) */
+#runTestButton, #runAllButton {
+    background-color: #28a745; /* Green */
+    font-weight: bold;
+}
+#runTestButton:hover, #runAllButton:hover {
+    background-color: #218838; /* Darker Green */
+}
+
+/* Nút màu đỏ (Danger) */
+#recordButton, #stopButton {
+    background-color: #dc3545; /* Red */
+    font-weight: bold;
+}
+#recordButton:hover, #stopButton:hover {
+    background-color: #c82333; /* Darker Red */
+}
+
+/* SỬA: Tùy chỉnh giao diện cho RadioButton */
+
+/* Vòng tròn mặc định (chưa check) */
+QRadioButton::indicator {
+    border: 2px solid #555555; /* Viền màu xám đậm */
+    border-radius: 9px;        /* Bo tròn để tạo hình tròn (18/2) */
+    width: 14px;               /* Chiều rộng của vòng tròn */
+    height: 14px;              /* Chiều cao của vòng tròn */
+    background: transparent;   /* Nền trong suốt */
+}
+
+/* Vòng tròn khi được check */
+QRadioButton::indicator:checked {
+    background-color: #28a745; /* Màu xanh lá cho chấm tròn bên trong */
+    border: 2px solid #555555; /* Giữ nguyên màu viền */
 }
