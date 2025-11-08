@@ -1,9 +1,9 @@
 import sys
 import os
-from main import hwnd_from_title, bring_to_front, get_window_rect, get_dpi_scale_factor, MacroStep, send_char_to_hwnd, send_key_to_hwnd, send_combo_to_hwnd, send_mouse_click
 import base64
 import json
 import threading # SỬA: Thêm threading
+import subprocess # SỬA: Thêm thư viện subprocess để chạy file .exe
 import time
 import ctypes # SỬA: Thêm thư viện ctypes để tương tác với Windows API
 from PySide6.QtCore import Qt, QPoint, QSize, QTimer, QThread, Signal, QObject
@@ -48,6 +48,186 @@ try:
 except FileNotFoundError:
     print("Lỗi: Không tìm thấy file 'logo_base64.txt'. Sẽ sử dụng ảnh placeholder.")
     LOGO_PNG_BASE64 = "" # Để trống nếu không tìm thấy
+
+# =========================================================================
+# SỬA: DI CHUYỂN CÁC HÀM TIỆN ÍCH RA NGOÀI CLASS (GLOBAL SCOPE)
+# =========================================================================
+
+# ----------------------------- WinAPI Helpers ----------------------------
+user32 = ctypes.windll.user32
+
+def get_dpi_scale_factor(hwnd):
+    """
+    Lấy tỷ lệ DPI (ví dụ: 1.5 cho 150% scale) cho cửa sổ hiện tại,
+    sử dụng WinAPI để đảm bảo chính xác.
+    """
+    if win32api is None:
+        return 1.0
+    try:
+        # Lấy handle của monitor chứa cửa sổ
+        monitor_handle = win32api.MonitorFromWindow(hwnd, win32con.MONITOR_DEFAULTTONEAREST)
+
+        # Lấy DPI (ví dụ: 144 cho 150%)
+        dpi_x = win32api.GetDpiForMonitor(monitor_handle, 0)
+
+        # Tỷ lệ scale: DPI / 96 (DPI chuẩn 100%)
+        scale_factor = Decimal(dpi_x) / Decimal(96)
+        return float(scale_factor)
+    except Exception:
+        return 1.0
+
+def hwnd_from_title(title_substring):
+    """Tìm handle cửa sổ có tiêu đề chứa chuỗi con."""
+    result = []
+
+    def enumf(hwnd, arg):
+        if win32gui.IsWindowVisible(hwnd):
+            title = win32gui.GetWindowText(hwnd) or ""
+            if title_substring.lower() in title.lower():
+                result.append(hwnd)
+        return True
+
+    win32gui.EnumWindows(enumf, None)
+    return result[0] if result else None
+
+def get_window_rect(hwnd):
+    """Lấy (left, top, right, bottom) tọa độ tuyệt đối của cửa sổ (LOGICAL PIXEL)."""
+    try:
+        rect = win32gui.GetWindowRect(hwnd)
+        return rect
+    except Exception:
+        return None
+
+def bring_to_front(hwnd):
+    """
+    Đưa cửa sổ lên foreground.
+    Chỉ gọi SW_RESTORE nếu cửa sổ đang bị Minimize, giữ nguyên trạng thái Maximize.
+    """
+    try:
+        placement = win32gui.GetWindowPlacement(hwnd)
+
+        if placement[1] == win32con.SW_SHOWMINIMIZED:
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+
+        elif placement[1] == win32con.SW_SHOWMAXIMIZED:
+            win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
+
+        user32.SetForegroundWindow(hwnd)
+        time.sleep(0.1)
+        return True
+    except Exception:
+        return False
+
+# ----------------------------- Mouse/Keyboard Sender ---------------------
+mouse_controller = mouse.Controller()
+keyboard_controller = keyboard.Controller()
+
+def send_char_to_hwnd(hwnd, char):
+    """Gửi ký tự thông thường (cần focus)."""
+    if bring_to_front(hwnd):
+        keyboard_controller.type(char)
+        time.sleep(0.01)
+        return True
+    return False
+
+def send_key_to_hwnd(hwnd, key_name):
+    """Gửi phím đặc biệt (cần focus)."""
+    if bring_to_front(hwnd):
+        try:
+            key_name = key_name.lower().replace("key.", "")
+            key = getattr(Key, key_name, None)
+
+            if key:
+                keyboard_controller.press(key)
+                keyboard_controller.release(key)
+                time.sleep(0.01)
+                return True
+            else:
+                keyboard_controller.press(key_name)
+                keyboard_controller.release(key_name)
+                time.sleep(0.01)
+                return True
+        except Exception:
+            return False
+    return False
+
+def send_combo_to_hwnd(hwnd, combo_string):
+    """Gửi tổ hợp phím (ví dụ: 'ctrl+a', 'alt+f4') (cần focus)."""
+    if bring_to_front(hwnd):
+        try:
+            parts = combo_string.lower().split('+')
+            keys = []
+
+            for part in parts:
+                key = getattr(Key, part, None)
+                if key:
+                    keys.append(key)
+                else:
+                    keys.append(part)
+
+            for key in keys[:-1]:
+                keyboard_controller.press(key)
+
+            keyboard_controller.press(keys[-1])
+            keyboard_controller.release(keys[-1])
+
+            for key in reversed(keys[:-1]):
+                keyboard_controller.release(key)
+
+            time.sleep(0.01)
+            return True
+        except Exception:
+            return False
+    return False
+
+def send_mouse_click(hwnd, x_offset_logical, y_offset_logical, button_type, recorded_scale):
+    """
+    Thực hiện click chuột tại vị trí OFFSET PIXEL cố định so với góc trên bên trái
+    của cửa sổ mục tiêu (hwnd), có xử lý DPI Scaling.
+    """
+    if not bring_to_front(hwnd):
+        return False
+
+    rect = get_window_rect(hwnd)
+    if not rect:
+        return False
+    left, top, right, bottom = rect
+
+    # --- XỬ LÝ DPI SCALING ---
+    current_scale = get_dpi_scale_factor(hwnd)
+
+    # Tính Normalized Offset (Offset chuẩn 100% scale)
+    recorded_scale = recorded_scale if recorded_scale > 0 else 1.0
+    x_offset_normalized = x_offset_logical / recorded_scale
+    y_offset_normalized = y_offset_logical / recorded_scale
+
+    # Tính Offset Logical hiện tại (Offset chuẩn * Scale hiện tại)
+    # Đây là vị trí offset LOGICAL cần tìm trong cửa sổ hiện tại
+    x_offset_current_logical = x_offset_normalized * current_scale
+    y_offset_current_logical = y_offset_normalized * current_scale
+
+    # VỊ TRÍ TUYỆT ĐỐI CUỐI CÙNG (Logical Pixel)
+    x_abs_logical = left + x_offset_current_logical
+    y_abs_logical = top + y_offset_current_logical
+
+    # Di chuyển chuột đến vị trí tuyệt đối (Logical Pixel)
+    mouse_controller.position = (int(x_abs_logical), int(y_abs_logical))
+    time.sleep(0.01)
+
+    button = mouse.Button.left
+    click_count = 1
+
+    if "right" in button_type:
+        button = mouse.Button.right
+
+    if "double" in button_type:
+        click_count = 2
+
+    # Thực hiện click
+    mouse_controller.click(button, click_count)
+
+    time.sleep(0.01)
+    return True
 
 # =========================================================================
 # -------------------- HUD Window (PySide6) -------------------------------
@@ -114,6 +294,76 @@ class RecordingHUD(QDialog):
         self.status_label.setText(text)
         self.status_label.setStyleSheet(f"color: {color};")
 
+# =========================================================================
+# SỬA: THÊM ĐỊNH NGHĨA MACROSTEP VÀO TRƯỚC KHI SỬ DỤNG
+# =========================================================================
+from enum import Enum
+
+class MacroStepType(Enum):
+    """Defines the types of steps in a macro for better type safety."""
+    COLUMN_DATA = "col"
+    MOUSE_CLICK = "mouse"
+    KEY_PRESS = "key"
+    KEY_COMBO = "combo"
+    END_OF_ROW = "end"
+
+class MacroStep:
+    def __init__(
+        self,
+        typ,
+        key_value=None,
+        col_index=None,
+        delay_after=0.01,
+        x_offset=None,
+        y_offset=None,
+        dpi_scale=1.0,
+    ):
+        self.typ = typ
+        self.key_value = key_value
+        self.col_index = col_index
+        self.delay_after = delay_after
+        # Tọa độ Offset ghi nhận lúc ghi (Logical Pixel)
+        self.x_offset_logical = x_offset
+        self.y_offset_logical = y_offset
+        self.dpi_scale = dpi_scale
+        self.item_id = None
+        self.item_idx = -1
+
+    def __repr__(self):
+        delay_ms = int(self.delay_after * 1000)
+        delay_str = f"(Chờ: {delay_ms}ms)"
+
+        if self.typ == MacroStepType.COLUMN_DATA.value:
+            col_display = self.col_index + 1 if self.col_index is not None else "N/A"
+            return f"[COL] Gửi giá trị cột {col_display} {delay_str}"
+        elif self.typ == MacroStepType.MOUSE_CLICK.value:
+            scale = self.dpi_scale if self.dpi_scale > 0 else 1.0
+            x_norm = int(self.x_offset_logical / scale) if self.x_offset_logical is not None else "N/A"
+            y_norm = int(self.y_offset_logical / scale) if self.y_offset_logical is not None else "N/A"
+            click_type = self.key_value.replace("_click", "").capitalize()
+            return f"[MOUSE] {click_type} Click tại Offset Chuẩn ({x_norm}px, {y_norm}px) (Scale Ghi: {int(self.dpi_scale * 100)}%) {delay_str}"
+        elif self.typ == MacroStepType.KEY_PRESS.value:
+            return f"[KEY] Gửi phím: '{self.key_value.upper()}' {delay_str}"
+        elif self.typ == MacroStepType.KEY_COMBO.value:
+            return f"[COMBO] Gửi tổ hợp phím: '{self.key_value.upper()}' {delay_str}"
+        elif self.typ == MacroStepType.END_OF_ROW.value:
+            return f"[END] Kết thúc dòng {delay_str}"
+        return f"<{self.typ}>"
+
+    def to_dict(self):
+        return {k: v for k, v in self.__dict__.items() if k != 'item_id'}
+
+    @staticmethod
+    def from_dict(data):
+        return MacroStep(
+            typ=data["typ"],
+            key_value=data.get('key_value'),
+            col_index=data.get('col_index'),
+            delay_after=data.get('delay_after', 0.01),
+            x_offset=data.get("x_offset_logical", data.get("x_offset")),
+            y_offset=data.get("y_offset_logical", data.get("y_offset")),
+            dpi_scale=data.get('dpi_scale', 1.0)
+        )
 # =========================================================================
 # -------------------- MacroStep Edit Dialog ------------------------------
 # =========================================================================
@@ -274,6 +524,7 @@ class RecordingWorker(QObject):
     def _on_escape_press(self, key):
         """Chỉ lắng nghe phím ESC."""
         if key == keyboard.Key.esc:
+            self.cancel_run()
             self.stop()
 
     def _start_main_listeners(self):
@@ -373,9 +624,17 @@ class MacroApp(QMainWindow):
         self.last_highlighted_csv_row = -1
         self.last_highlighted_macro_row = -1
         # SỬA: Thêm thuộc tính cho các nút chạy
+        self.record_btn = None # Thêm thuộc tính cho nút record
         self.run_test_btn = None
         self.run_all_btn = None
         self.stop_btn = None
+        self.ontop_btn = None # SỬA: Thêm thuộc tính cho nút Always on Top
+        self.edit_step_btn = None # SỬA: Thêm thuộc tính cho nút Sửa Dòng
+        # SỬA: Thêm các thuộc tính cho status bar
+        self.lbl_realtime_status = None
+        self.chk_show_realtime_status = None
+        self.realtime_status_timer = QTimer(self)
+        self.realtime_status_timer.timeout.connect(self._update_status_bar_info)
 
 
         self.df_csv = pd.DataFrame() # Khởi tạo dataframe rỗng
@@ -393,6 +652,9 @@ class MacroApp(QMainWindow):
 
         # SỬA: Tải danh sách cửa sổ lần đầu khi khởi động
         self.refresh_windows()
+
+        # SỬA: Khởi động listener ESC toàn cục
+        self._start_global_esc_listener()
 
         # SỬA: Yêu cầu cửa sổ tự điều chỉnh kích thước sau khi đã tạo xong mọi thứ
         self.adjustSize()
@@ -426,9 +688,17 @@ class MacroApp(QMainWindow):
         self.dark_mode_btn.setFixedSize(30, 30)
         header_layout.addWidget(self.dark_mode_btn)
 
+        # SỬA: Thêm nút Always on Top
+        self.ontop_btn = QPushButton("◰")
+        self.ontop_btn.setFixedSize(30, 30)
+        self.ontop_btn.setCheckable(True) # Cho phép nút có trạng thái bật/tắt
+        self.ontop_btn.clicked.connect(self._toggle_always_on_top)
+        header_layout.addWidget(self.ontop_btn)
+
         # Nút Minimize
         self.minimize_btn = QPushButton("_")
         self.minimize_btn.setFixedSize(30, 30)
+        self.minimize_btn.clicked.connect(self.showMinimized) # SỬA: Kết nối nút minimize để thu nhỏ cửa sổ
         header_layout.addWidget(self.minimize_btn)
 
         # Nút Close
@@ -562,14 +832,14 @@ class MacroApp(QMainWindow):
 
         # -- Macro Controls --
         record_controls = QHBoxLayout()
-        record_btn = QPushButton("⚫ Record Macro (5s chuẩn bị)")
-        record_btn.clicked.connect(self.record_macro) # SỬA: Kết nối nút Record
-        record_btn.setObjectName("recordButton") # Gán ID cho nút Record
-        record_controls.addWidget(record_btn)
+        self.record_btn = QPushButton("⚫ Record Macro (5s chuẩn bị)")
+        self.record_btn.clicked.connect(self.record_macro) # SỬA: Kết nối nút Record
+        self.record_btn.setObjectName("recordButton") # Gán ID cho nút Record
+        record_controls.addWidget(self.record_btn)
         record_controls.addStretch() # Giữ nguyên stretch để đẩy các nút còn lại sang phải
         record_controls.addWidget(QPushButton("Lưu Macro", clicked=self.save_macro)) # SỬA: Kết nối nút Lưu Macro
         record_controls.addWidget(QPushButton("Mở Macro", clicked=self.load_macro))
-        record_controls.addWidget(QPushButton("Clear Macro", clicked=self.clear_macro))
+        record_controls.addWidget(QPushButton("Clear Macro", clicked=self.clear_macro)) # SỬA: Kết nối nút Clear Macro
         macro_layout.addLayout(record_controls)        
 
         # -- Macro Table --
@@ -579,6 +849,7 @@ class MacroApp(QMainWindow):
         self.tree_macro.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.tree_macro.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.tree_macro.setSelectionBehavior(QAbstractItemView.SelectRows) # Đảm bảo chọn toàn bộ hàng
+        self.tree_macro.itemSelectionChanged.connect(self._update_edit_button_text) # SỬA: Kết nối sự kiện chọn dòng
         self.tree_macro.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
         macro_layout.addWidget(self.tree_macro)
 
@@ -595,7 +866,8 @@ class MacroApp(QMainWindow):
 
         # -- Edit/Delete Buttons --
         edit_controls = QHBoxLayout()
-        edit_controls.addWidget(QPushButton("Sửa Dòng", clicked=self.edit_macro_step))
+        self.edit_step_btn = QPushButton("Sửa Dòng", clicked=self.edit_macro_step) # SỬA: Gán nút vào thuộc tính self
+        edit_controls.addWidget(self.edit_step_btn)
         edit_controls.addWidget(QPushButton("Xóa Dòng", clicked=self.delete_macro_step))
         edit_controls.addWidget(QPushButton("[+] Kết Thúc Dòng", clicked=lambda: self.add_manual_step("end")))
         edit_controls.addStretch()
@@ -638,11 +910,21 @@ class MacroApp(QMainWindow):
         status_group = QGroupBox("Thông tin Tọa độ (Real-time)")
         status_layout = QHBoxLayout(status_group)
 
-        self.lbl_realtime_status = QLabel("...")
-        status_layout.addWidget(self.lbl_realtime_status)
-        status_layout.addStretch()
-        status_layout.addWidget(QCheckBox("Hiện/Ẩn"))
+        self.lbl_realtime_status = QLabel("...") # SỬA: Gán vào thuộc tính self
+        self.lbl_realtime_status.setWordWrap(True) # Cho phép xuống dòng
+        status_layout.addWidget(self.lbl_realtime_status, 1) # Thêm stretch factor
 
+        self.chk_show_realtime_status = QCheckBox("Hiện/Ẩn") # SỬA: Gán vào thuộc tính self
+        self.chk_show_realtime_status.stateChanged.connect(self._toggle_realtime_status) # SỬA: Kết nối sự kiện
+        # SỬA: Thêm stylesheet để đổi màu dấu check thành xanh lá
+        self.chk_show_realtime_status.setStyleSheet("""
+            QCheckBox::indicator:checked {
+                background-color: #28a745;
+                border: 1px solid #218838;
+            }
+        """)
+
+        status_layout.addWidget(self.chk_show_realtime_status)
         # Thêm vào layout chính với margin
         frame = QFrame()
         frame_layout = QVBoxLayout(frame)
@@ -696,6 +978,86 @@ class MacroApp(QMainWindow):
         self.setStyleSheet(stylesheet)
         # self.update() # Không cần thiết nữa khi không dùng paintEvent
 
+    def _toggle_always_on_top(self, checked):
+        """SỬA: Bật/tắt chế độ 'Luôn ở trên cùng'."""
+        # Lấy các cờ cửa sổ hiện tại
+        flags = self.windowFlags()
+
+        if checked:
+            # Thêm cờ "Always on Top"
+            flags |= Qt.WindowStaysOnTopHint
+        else:
+            # Xóa cờ "Always on Top"
+            flags &= ~Qt.WindowStaysOnTopHint
+
+        # Áp dụng lại các cờ mới
+        self.setWindowFlags(flags)
+        self.show() # Phải gọi show() lại sau khi thay đổi cờ cửa sổ
+
+    def _update_edit_button_text(self):
+        """SỬA: Cập nhật văn bản của nút 'Sửa Dòng' dựa trên lựa chọn hiện tại."""
+        selected_items = self.tree_macro.selectedItems()
+        if selected_items:
+            # Lấy chỉ số hàng từ item đầu tiên được chọn
+            row = selected_items[0].row()
+            # Số thứ tự hiển thị là chỉ số hàng + 1
+            step_number = row + 1
+            self.edit_step_btn.setText(f"Sửa Dòng #{step_number}")
+        else:
+            self.edit_step_btn.setText("Sửa Dòng")
+
+    # SỬA: Thêm các hàm xử lý cho status bar
+    def _toggle_realtime_status(self, state):
+        """Bật/tắt bộ đếm thời gian cập nhật trạng thái real-time."""
+        if state == Qt.Checked.value:
+            # Cập nhật ngay lần đầu, sau đó bắt đầu timer
+            self._update_status_bar_info()
+            self.realtime_status_timer.start(200) # Cập nhật mỗi 200ms
+        else:
+            self.realtime_status_timer.stop()
+            self.lbl_realtime_status.setText("...") # Reset text khi tắt
+
+    def _update_status_bar_info(self):
+        """Lấy thông tin và cập nhật vào label trạng thái."""
+        if not self.chk_show_realtime_status.isChecked():
+            return
+
+        try:
+            hwnd = hwnd_from_title(self.target_window_title)
+            # 1. Kích thước màn hình (Logical Pixels)
+            screen_w = win32api.GetSystemMetrics(win32con.SM_CXSCREEN)
+            screen_h = win32api.GetSystemMetrics(win32con.SM_CYSCREEN)
+
+            # 2. Vị trí con trỏ (Tuyệt đối, Logical Pixels)
+            cursor_x, cursor_y = win32api.GetCursorPos()
+
+            status_parts = [f"Màn hình: <b>{screen_w}x{screen_h}px</b>"]
+
+            if hwnd and self.target_window_title:
+                rect = get_window_rect(hwnd)
+                if rect:
+                    left, top, right, bottom = rect
+                    width, height = right - left, bottom - top
+                    x_offset_logical, y_offset_logical = cursor_x - left, cursor_y - top
+                    dpi_scale = get_dpi_scale_factor(hwnd)
+                    scale = dpi_scale if dpi_scale > 0 else 1.0
+                    x_norm = int(x_offset_logical / scale)
+                    y_norm = int(y_offset_logical / scale)
+
+                    status_parts.extend([
+                        f"<b>DPI Scale:</b> {int(dpi_scale * 100)}%",
+                        f"<b>Cửa sổ ({width}x{height}px):</b> L{left} T{top}",
+                        f"<b>Chuột Tuyệt đối:</b> X{cursor_x} Y{cursor_y}",
+                        f"<b>Chuột Offset Chuẩn (100%):</b> Xo{x_norm} Yo{y_norm}",
+                    ])
+                else:
+                    status_parts.append(f"Cửa sổ '{self.target_window_title}' không tìm thấy hoặc bị ẩn.")
+            else:
+                status_parts.append("Vui lòng chọn <b>Cửa sổ mục tiêu</b>.")
+
+            self.lbl_realtime_status.setText(" | ".join(status_parts))
+        except Exception as e:
+            self.lbl_realtime_status.setText(f"Lỗi cập nhật trạng thái: {e}")
     # SỬA: Thêm logic cho Group 1
     def browse_ac(self):
         """Mở hộp thoại chọn file .exe cho ACSOFT."""
@@ -824,7 +1186,8 @@ class MacroApp(QMainWindow):
         self.current_col_index = 0
         self.recording = True
         self._recording_finished_processed = False # Reset flag for new recording session
-
+        self._set_buttons_for_running(True) # SỬA: Cập nhật trạng thái các nút
+        
         # Hiển thị HUD
         self.hud_window = RecordingHUD(self)
         self.hud_window.stop_button.clicked.connect(self.stop_recording)
@@ -851,12 +1214,7 @@ class MacroApp(QMainWindow):
 
     def on_recording_finished(self, completed):
         """Dọn dẹp sau khi worker kết thúc."""
-        # Thêm print statement để debug: kiểm tra xem hàm này có được gọi bao nhiêu lần
-        print(f"on_recording_finished called. Completed: {completed}, self.recording: {self.recording}")
-        if not self.recording: # Ngăn chặn thực thi lại nếu đã kết thúc
-            return
         self.recording = False
-        print(f"on_recording_finished called. Completed: {completed}, self.recording: {self.recording}, processed_flag: {self._recording_finished_processed}")
 
         # Dọn dẹp thread
         if self.recording_thread:
@@ -864,39 +1222,19 @@ class MacroApp(QMainWindow):
             self.recording_thread.wait()
             self.recording_thread = None
             self.recording_worker = None
-        # Sử dụng cờ _recording_finished_processed để đảm bảo khối này chỉ chạy một lần
-        if not self._recording_finished_processed:
-            self._recording_finished_processed = True # Đánh dấu là đã xử lý
 
         # Đóng HUD
         if self.hud_window:
             self.hud_window.close()
             self.hud_window = None
-            self.recording = False # Đảm bảo trạng thái ghi của ứng dụng chính được cập nhật
+            
+        self._set_buttons_for_running(False) # SỬA: Khôi phục trạng thái các nút
 
         # Hiển thị thông báo
         if completed:
             QMessageBox.information(self, "Hoàn thành", f"Đã ghi xong macro với {len(self.macro_steps)} bước.")
-            # Dọn dẹp thread
-            if self.recording_thread:
-                self.recording_thread.quit()
-                self.recording_thread.wait()
-                self.recording_thread = None
-                self.recording_worker = None
-
-            # Đóng HUD
-            if self.hud_window:
-                self.hud_window.close()
-                self.hud_window = None
-
-            # Hiển thị thông báo
-            if completed:
-                QMessageBox.information(self, "Hoàn thành", f"Đã ghi xong macro với {len(self.macro_steps)} bước.")
-            else:
-                QMessageBox.information(self, "Đã hủy", "Quá trình ghi macro đã được hủy.")
         else:
             QMessageBox.information(self, "Đã hủy", "Quá trình ghi macro đã được hủy.")
-            print("on_recording_finished: Đã xử lý tín hiệu này, bỏ qua.")
 
     def update_hud_status(self, text, color):
         """Slot để cập nhật HUD từ thread worker."""
@@ -1117,23 +1455,23 @@ class MacroApp(QMainWindow):
         # Pass the step object itself, or its index
         self.edit_macro_step(initial_step.item_idx)
 
-    def edit_macro_step(self, step_index=None):
+    def edit_macro_step(self, step_index):
         """Mở cửa sổ chỉnh sửa cho bước macro được chọn. step_index dùng cho add_manual_step."""
         selected_step = None
-        if step_index is not None:
-            # If an index is provided, find the step by index
-            selected_step = next((step for step in self.macro_steps if step.item_idx == step_index), None)
-        else:
-            # If no index, get the currently selected row in the QTableWidget
-            row = self.tree_macro.currentRow() # SỬA: Dùng currentRow() để lấy hàng đang chọn
-            if row < 0: # currentRow() trả về -1 nếu không có hàng nào được chọn
-                QMessageBox.warning(self, "Lỗi", "Vui lòng chọn một bước macro để sửa.")
-                return
-            
-            # Lấy đối tượng MacroStep từ QTableWidgetItem ở cột 2 (Mô tả chi tiết)
-            item = self.tree_macro.item(row, 2)
-            if item:
-                selected_step = item.data(Qt.UserRole) # Lấy đối tượng MacroStep đã lưu
+        # if step_index is not None:
+        #     # If an index is provided, find the step by index
+        #     selected_step = next((step for step in self.macro_steps if step.item_idx == step_index), None)
+        # else:
+        #     # If no index, get the currently selected row onin the QTableWidget
+        row = self.tree_macro.currentRow() # SỬA: Dùng currentRow() để lấy hàng đang chọn
+        if row < 0: # currentRow() trả về -1 nếu không có hàng nào được chọn
+            QMessageBox.warning(self, "Lỗi", "Vui lòng chọn một bước macro để sửa.")
+            return
+        
+        # Lấy đối tượng MacroStep từ QTableWidgetItem ở cột 2 (Mô tả chi tiết)
+        item = self.tree_macro.item(row, 2)
+        if item:
+            selected_step = item.data(Qt.UserRole) # Lấy đối tượng MacroStep đã lưu
 
         if not selected_step:
             QMessageBox.warning(self, "Lỗi", "Không tìm thấy bước macro để sửa.")
@@ -1283,9 +1621,7 @@ class MacroApp(QMainWindow):
 
         # Reset cờ hủy và cập nhật UI
         self.cancel_run_flag.clear()
-        self.run_test_btn.setEnabled(False)
-        self.run_all_btn.setEnabled(False)
-        self.stop_btn.setEnabled(True)
+        self._set_buttons_for_running(True) # SỬA: Cập nhật trạng thái các nút
 
         # Hiển thị HUD
         self.hud_window = RecordingHUD(self)
@@ -1329,10 +1665,7 @@ class MacroApp(QMainWindow):
 
     def on_run_finished(self, completed, message):
         """Dọn dẹp sau khi chạy macro xong."""
-        # SỬA: Kích hoạt lại các nút
-        self.run_test_btn.setEnabled(True)
-        self.run_all_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
+        self._set_buttons_for_running(False) # SỬA: Khôi phục trạng thái các nút
 
         self.lbl_status.setText(message)
         QMessageBox.information(self, "Thông báo", message)
@@ -1351,6 +1684,32 @@ class MacroApp(QMainWindow):
         
         # Xóa tô sáng khi kết thúc
         self.clear_all_highlights()
+
+    def _set_buttons_for_running(self, is_running):
+        """Hàm tiện ích để bật/tắt các nút điều khiển khi chạy/dừng."""
+        self.record_btn.setEnabled(not is_running)
+        self.run_test_btn.setEnabled(not is_running)
+        self.run_all_btn.setEnabled(not is_running)
+        self.stop_btn.setEnabled(is_running)
+        self.lbl_status.setText("Đang chạy..." if is_running else "Chờ...")
+
+    def _start_global_esc_listener(self):
+        """Khởi động một listener bàn phím toàn cục để bắt phím ESC."""
+        def on_press_global(key):
+            if key == Key.esc:
+                # Gọi cancel_run từ luồng chính của GUI
+                QTimer.singleShot(0, self.cancel_run)
+
+        self.global_esc_listener = keyboard.Listener(on_press=on_press_global)
+        self.global_esc_listener.daemon = True # Cho phép ứng dụng thoát ngay cả khi listener đang chạy
+        self.global_esc_listener.start()
+
+    def closeEvent(self, event):
+        """Xử lý sự kiện đóng cửa sổ."""
+        if self.global_esc_listener:
+            self.global_esc_listener.stop()
+        # Gọi hàm closeEvent của lớp cha để đảm bảo các dọn dẹp khác được thực hiện
+        super().closeEvent(event)
 
     def highlight_csv_row(self, row_index):
         """Tô sáng một hàng trong bảng CSV."""
@@ -1425,7 +1784,13 @@ class MacroRunnerWorker(QObject):
                     self.run_finished_signal.emit(False, "Đã hủy bởi người dùng.")
                     return
                 self.update_hud_signal.emit(f"Bắt đầu chạy sau: {i}s", "#87CEEB")
-                time.sleep(1)
+                # SỬA: Thay thế time.sleep(1) bằng vòng lặp không chặn để ESC hoạt động ngay
+                delay_start_time = time.time()
+                while time.time() - delay_start_time < 1.0:
+                    if self.cancel_flag.is_set():
+                        break
+                    # Chờ một khoảng rất ngắn và kiểm tra lại
+                    time.sleep(0.05)
 
             self.update_hud_signal.emit("► ĐANG CHẠY...", "#98FB98")
 
@@ -1452,11 +1817,22 @@ class MacroRunnerWorker(QObject):
                         send_mouse_click(hwnd, step.x_offset_logical, step.y_offset_logical, step.key_value, step.dpi_scale)
 
                     # Chờ theo độ trễ đã cấu hình
+                    # SỬA: Thay thế time.sleep() bằng vòng lặp không chặn để ESC hoạt động ngay
                     delay = step.delay_after if self.use_recorded_speed else self.custom_delay_s
-                    time.sleep(delay)
+                    delay_start_time = time.time()
+                    while time.time() - delay_start_time < delay:
+                        if self.cancel_flag.is_set():
+                            break
+                        time.sleep(0.05) # Chờ một khoảng rất ngắn và kiểm tra lại
 
                 if self.cancel_flag.is_set(): break
-                time.sleep(self.row_delay_s)
+
+                # SỬA: Thay thế time.sleep() giữa các dòng bằng vòng lặp không chặn
+                delay_start_time = time.time()
+                while time.time() - delay_start_time < self.row_delay_s:
+                    if self.cancel_flag.is_set():
+                        break
+                    time.sleep(0.05)
 
             if self.cancel_flag.is_set():
                 self.run_finished_signal.emit(False, "Đã hủy bởi người dùng.")
