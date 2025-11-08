@@ -975,6 +975,21 @@ class MacroApp(QMainWindow):
             stylesheet = "" 
             self.dark_mode_btn.setText("◐")
         
+        # SỬA: Thêm style cho các nút khi bị vô hiệu hóa (disabled)
+        # Điều này sẽ làm cho các nút record, run, stop có màu xám đậm khi không thể nhấn.
+        disabled_button_style = """
+            QPushButton:disabled {
+                background-color: #505050; /* Màu nền xám đậm */
+                color: #888888;          /* Màu chữ xám nhạt */
+                border: 1px solid #606060;
+            }
+        """
+        
+        # Nối chuỗi style mới vào stylesheet đã tải
+        # Bằng cách này, chúng ta không cần sửa file .qss gốc
+        # và vẫn áp dụng được style mong muốn.
+        stylesheet += disabled_button_style
+
         self.setStyleSheet(stylesheet)
         # self.update() # Không cần thiết nữa khi không dùng paintEvent
 
@@ -1297,11 +1312,11 @@ class MacroApp(QMainWindow):
         self.recording_worker.add_step_signal.emit(step)
 
     def _on_key_press(self, key):
-        if not self.recording: return
-
-        if key == Key.esc:
-            self.stop_recording()
+        #nếu đang chạy phát macro thì gọi hàm self.cancel_run()
+        if key == keyboard.Key.esc and self.run_worker:
+            self.cancel_run()
             return
+        if not self.recording: return
 
         if key in [Key.ctrl_l, Key.ctrl_r, Key.alt_l, Key.alt_r, Key.shift_l, Key.shift_r]:
             self.current_modifiers.add(key)
@@ -1698,7 +1713,8 @@ class MacroApp(QMainWindow):
         def on_press_global(key):
             if key == Key.esc:
                 # Gọi cancel_run từ luồng chính của GUI
-                QTimer.singleShot(0, self.cancel_run)
+                self.cancel_run()
+                #QTimer.singleShot(0, self.cancel_run)
 
         self.global_esc_listener = keyboard.Listener(on_press=on_press_global)
         self.global_esc_listener.daemon = True # Cho phép ứng dụng thoát ngay cả khi listener đang chạy
