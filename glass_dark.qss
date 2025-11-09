@@ -1,0 +1,41 @@
+/* glass_dark.qss - Stylesheet cho cửa sổ Liquid Glass (Giao diện Tối) */
+
+QWidget {
+    font-family: "Segoe UI", sans-serif;
+    color: #e0e0e0; /* Màu chữ xám nhạt */
+}
+
+#mainFrame {
+    /* Quan trọng nhất: Nền bán trong suốt để hiệu ứng Mica/Acrylic hiển thị */
+    background-color: rgba(40, 44, 52, 0.85); /* Màu xám đen, mờ 85% */
+    border-radius: 12px; /* Bo góc nhẹ */
+}
+
+QLabel {
+    background-color: transparent; /* Đảm bảo label không có nền */
+}
+
+#titleLabel {
+    font-size: 14pt;
+    font-weight: bold;
+    color: white;
+}
+
+QPushButton {
+    background-color: rgba(255, 255, 255, 0.1); /* Nền trắng mờ */
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+QPushButton:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+#closeButton {
+    background-color: rgba(220, 53, 69, 0.8); /* Màu đỏ mờ */
+}
+#closeButton:hover {
+    background-color: rgba(200, 35, 51, 0.9);
+}
