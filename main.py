@@ -870,7 +870,7 @@ class MacroApp(QMainWindow):
 
         # -- Macro Controls --
         record_controls = QHBoxLayout()
-        self.record_btn = QPushButton("⚫ Record Macro (5s chuẩn bị)")
+        self.record_btn = QPushButton("● Record Macro (5s chuẩn bị)")
         self.record_btn.clicked.connect(self.record_macro) # SỬA: Kết nối nút Record
         self.record_btn.setObjectName("recordButton") # Gán ID cho nút Record
         record_controls.addWidget(self.record_btn)
@@ -1018,6 +1018,26 @@ class MacroApp(QMainWindow):
             except FileNotFoundError:
                 print("Lỗi: Không tìm thấy file 'light.qss'. Sử dụng stylesheet mặc định.")
         
+        # SỬA: Thêm style cho các nút bị vô hiệu hóa (disabled)
+        # Style này sẽ được nối vào cuối stylesheet đã tải
+        disabled_button_style = """
+            QPushButton:disabled {
+                background-color: #555;
+                color: #888;
+                border: 1px solid #666;
+            }
+        """
+        if not self.is_dark_mode:
+            # Style cho giao diện sáng
+            disabled_button_style = """
+                QPushButton:disabled {
+                    background-color: #dcdcdc;
+                    color: #a0a0a0;
+                    border: 1px solid #c0c0c0;
+                }
+            """
+        stylesheet += disabled_button_style
+
         # Cập nhật màu nền cho các hàng được tô sáng
         if self.is_dark_mode:
             self.highlight_color = QColor("#FFA07A22") # Cam nhạt cho nền tối
@@ -1882,7 +1902,12 @@ class MacroRunnerWorker(QObject):
                 self.update_status_signal.emit(f"Đang chạy dòng CSV số: {row_index + 1}/{len(rows_to_run)}...")
 
                 # SỬA: Kiểm tra trạng thái pause trước khi xử lý mỗi dòng
-                self.pause_flag.wait()
+                # SỬA: Thay thế pause_flag.wait() bằng vòng lặp để có thể kiểm tra cancel_flag
+                while not self.pause_flag.is_set():
+                    if self.cancel_flag.is_set():
+                        break # Thoát khỏi vòng lặp pause nếu bị hủy
+                    time.sleep(0.1) # Chờ một chút trước khi kiểm tra lại
+                if self.cancel_flag.is_set(): break # Nếu bị hủy trong lúc pause, thoát khỏi vòng lặp dòng
 
                 for step in self.macro_steps:
                     if self.cancel_flag.is_set(): break
@@ -1900,7 +1925,12 @@ class MacroRunnerWorker(QObject):
                         send_mouse_click(hwnd, step.x_offset_logical, step.y_offset_logical, step.key_value, step.dpi_scale)
 
                     # SỬA: Kiểm tra trạng thái pause sau mỗi bước
-                    self.pause_flag.wait()
+                    # SỬA: Thay thế pause_flag.wait() bằng vòng lặp để có thể kiểm tra cancel_flag
+                    while not self.pause_flag.is_set():
+                        if self.cancel_flag.is_set():
+                            break # Thoát khỏi vòng lặp pause nếu bị hủy
+                        time.sleep(0.1) # Chờ một chút trước khi kiểm tra lại
+                    if self.cancel_flag.is_set(): break # Nếu bị hủy trong lúc pause, thoát khỏi vòng lặp bước
 
                     # Chờ theo độ trễ đã cấu hình
                     # SỬA: Thay thế time.sleep() bằng vòng lặp không chặn để ESC hoạt động ngay
