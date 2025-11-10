@@ -1802,8 +1802,9 @@ class MacroApp(QMainWindow):
 
     def closeEvent(self, event):
         """Xử lý sự kiện đóng cửa sổ."""
-        if self.global_esc_listener:
-            self.global_esc_listener.stop()
+        # SỬA: Sửa lỗi chính tả từ global_esc_listener thành global_hotkey_listener
+        if self.global_hotkey_listener:
+            self.global_hotkey_listener.stop()
         # Gọi hàm closeEvent của lớp cha để đảm bảo các dọn dẹp khác được thực hiện
         super().closeEvent(event)
 

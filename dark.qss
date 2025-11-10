@@ -32,7 +32,7 @@ QMainWindow, #mainFrame { /* Styles cho cửa sổ chính và central widget */
 /* SỬA: Thêm quy tắc này để bo góc cho central widget */
 #mainFrame {
     border-radius: 20px;
-    border: 1px solid #282c34; /* Thêm viền để thấy rõ hơn */
+    border: 2px solid #444857; /* Thêm viền để thấy rõ hơn */
 }
 
 QGroupBox {

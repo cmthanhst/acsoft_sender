@@ -1,6 +1,6 @@
 /* light.qss */
 QWidget {
-    background-color: #f0f0f0; /* Màu nền chung sáng */
+    background-color: #00f0f0f0; /* Màu nền chung sáng */
     font-family: Courier;
     color: #000000; /* Màu chữ chung (đen) */
     font-size: 10pt;
@@ -33,7 +33,7 @@ QMainWindow, #mainFrame { /* Styles cho cửa sổ chính và central widget */
 /* SỬA: Thêm quy tắc này để bo góc cho central widget */
 #mainFrame {
     border-radius: 20px;
-    border: 1px solid #f0f0f0; /* Viền cùng màu nền */
+    border: 2px solid #cccccc; /* Viền cùng màu nền */
 }
 
 QGroupBox {
